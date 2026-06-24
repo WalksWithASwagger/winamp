@@ -1,0 +1,65 @@
+{
+  "name": "@walkswithaswagger/winamp",
+  "version": "0.1.0",
+  "description": "A draggable, skinnable Winamp-style audio deck for React, with a Milkdrop (Butterchurn) visualizer, a real graphic EQ, and a spectrum analyzer. Music player and visualizer for your website.",
+  "license": "MIT",
+  "author": "Kris Krüg",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WalksWithASwagger/winamp.git"
+  },
+  "homepage": "https://github.com/WalksWithASwagger/winamp#readme",
+  "keywords": [
+    "winamp",
+    "music-player",
+    "audio-player",
+    "visualizer",
+    "milkdrop",
+    "butterchurn",
+    "react",
+    "equalizer",
+    "web-audio"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup && cp src/styles.css dist/styles.css && node scripts/add-use-client.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "dependencies": {
+    "butterchurn": "^2.6.7",
+    "butterchurn-presets": "^2.4.7",
+    "framer-motion": "^12.40.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "react": "^19",
+    "react-dom": "^19",
+    "tsup": "^8.5.0",
+    "typescript": "^5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
