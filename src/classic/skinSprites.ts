@@ -5,6 +5,8 @@
 // EQ / playlist / TEXT-font sprite sets are intentionally deferred to their
 // later phases (Ph4–Ph6).
 
+import { TEXT_SPRITES } from "./font";
+
 export type SpriteDef = {
   name: string;
   x: number;
@@ -15,6 +17,7 @@ export type SpriteDef = {
 
 /** Sprite definitions grouped by their source BMP file (sans extension). */
 export const SKIN_SPRITES: Record<string, SpriteDef[]> = {
+  TEXT: TEXT_SPRITES,
   MAIN: [{ name: "MAIN_WINDOW_BACKGROUND", x: 0, y: 0, width: 275, height: 116 }],
   CBUTTONS: [
     { name: "MAIN_PREVIOUS_BUTTON", x: 0, y: 0, width: 23, height: 18 },

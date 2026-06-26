@@ -11,11 +11,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `dev`, `typecheck`, and `check:dist` package scripts.
 - GitHub Actions CI (typecheck + dist-drift guard) and tag-triggered npm release workflow.
 - Vite demo playground under `examples/playground`.
-- Classic `.wsz` skin engine foundation (Ph1): `parseSkin`, `useSkin`,
-  `SkinProvider`/`useSkinContext`, and `Sprite`/`SpriteButton` primitives, with
-  ported main-window sprite coordinates. Parses real Winamp 2 skins
-  (unzip → BMP decode → sprite data-URIs). `fflate` is a dynamic-imported
-  dependency so the modern deck doesn't pay for it.
+- **`ClassicWinampPlayer`** — authentic Winamp 2 `.wsz` skin support (v1). Load
+  any classic skin and get a pixel-faithful main window driven by the same
+  `PlayerProvider`: parser (`parseSkin`/`useSkin`), `Sprite`/`SpriteButton`/
+  `Slider` primitives, wired transport + position/volume sliders, NUMBERS time
+  display, bitmap-font scrolling `Marquee`, and a viscolor-themed
+  `ClassicVisualizer`. Sprite coordinates ported from webamp (MIT; see NOTICE).
+  `fflate` is dynamic-imported so the modern deck doesn't bundle it.
 
 ## [0.1.0]
 

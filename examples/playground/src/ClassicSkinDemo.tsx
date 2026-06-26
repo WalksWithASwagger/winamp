@@ -2,12 +2,21 @@
 // PlayerProvider. Audio is a generated WAV blob (self-contained, no network) so
 // playback, the position slider, and volume are all verifiable here. The Suno
 // collections above still await real audio.
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   ClassicWinampPlayer,
   PlayerProvider,
+  usePlayer,
   type PlayerTrack,
 } from "@walkswithaswagger/winamp";
+
+// Cue (load without playing) the demo track on mount so the marquee shows a
+// real title and the time display reads the track — no autoplay gesture needed.
+function CueOnMount({ id }: { id: string }) {
+  const { cue } = usePlayer();
+  useEffect(() => cue(id), [cue, id]);
+  return null;
+}
 
 const SKIN_URL =
   "https://raw.githubusercontent.com/captbaritone/webamp/master/packages/webamp-demo/skins/Green-Dimension-V2.wsz";
@@ -60,14 +69,15 @@ export function ClassicSkinDemo() {
   return (
     <div style={{ marginTop: "2rem" }}>
       <h2 style={{ fontSize: "0.95rem", margin: "0 0 0.5rem" }}>
-        Classic skin — wired controls (Ph3)
+        Classic skin — full main window (Ph4 · v1)
       </h2>
       <p style={{ margin: "0 0 0.75rem", color: "#8c819b", fontSize: "0.8rem" }}>
-        A real <code>.wsz</code> via <code>ClassicWinampPlayer</code>, driven by
-        its own <code>PlayerProvider</code>. Transport, position, and volume are
-        live (a generated demo tone).
+        A real <code>.wsz</code> via <code>ClassicWinampPlayer</code>: transport,
+        sliders, time display, scrolling marquee, and spectrum — all driven by
+        its own <code>PlayerProvider</code> (a generated demo tone).
       </p>
       <PlayerProvider tracks={tracks}>
+        <CueOnMount id="demo" />
         <ClassicWinampPlayer skinUrl={SKIN_URL} scale={2} />
       </PlayerProvider>
     </div>

@@ -12,5 +12,8 @@ export { SkinProvider, useSkinContext } from "./classic/SkinContext";
 export { Sprite, SpriteButton } from "./classic/Sprite";
 export { Slider } from "./classic/Slider";
 export { ClassicWinampPlayer } from "./classic/ClassicWinampPlayer";
+export { BitmapText, Marquee, TimeDisplay } from "./classic/readouts";
+export { ClassicVisualizer } from "./classic/ClassicVisualizer";
+export { glyphFor } from "./classic/font";
 export { SKIN_SPRITES, SPRITE_DIMS } from "./classic/skinSprites";
 export type { SpriteDef, SpriteName } from "./classic/skinSprites";
