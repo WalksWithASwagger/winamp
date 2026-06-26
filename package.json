@@ -39,7 +39,12 @@
     "dist"
   ],
   "scripts": {
+    "dev": "tsup --watch",
     "build": "tsup && cp src/styles.css dist/styles.css && node scripts/add-use-client.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "check:dist": "pnpm build && git diff --exit-code -- dist",
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
@@ -52,12 +57,17 @@
     "framer-motion": "^12.40.0"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "jsdom": "^29.1.1",
     "react": "^19",
     "react-dom": "^19",
     "tsup": "^8.5.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.9"
   },
   "publishConfig": {
     "access": "public"
