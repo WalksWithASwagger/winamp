@@ -47,8 +47,10 @@ export function App() {
       {/* key forces a fresh PlayerProvider when the collection changes */}
       <PlayerProvider key={active.id} tracks={active.tracks}>
         <WinampPlayer wordmarkText={active.label} />
-        <ClassicSkinDemo />
       </PlayerProvider>
+
+      {/* Classic window has its own provider + demo audio (see component). */}
+      <ClassicSkinDemo />
     </div>
   );
 }

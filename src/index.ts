@@ -10,6 +10,7 @@ export { useSkin } from "./classic/useSkin";
 export type { SkinStatus, UseSkinResult } from "./classic/useSkin";
 export { SkinProvider, useSkinContext } from "./classic/SkinContext";
 export { Sprite, SpriteButton } from "./classic/Sprite";
+export { Slider } from "./classic/Slider";
 export { ClassicWinampPlayer } from "./classic/ClassicWinampPlayer";
 export { SKIN_SPRITES, SPRITE_DIMS } from "./classic/skinSprites";
 export type { SpriteDef, SpriteName } from "./classic/skinSprites";

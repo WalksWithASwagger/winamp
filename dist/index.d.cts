@@ -140,15 +140,37 @@ declare function SpriteButton({ up, down, onClick, title, style, }: {
 }): react.JSX.Element;
 
 /**
- * Static classic main window rendered from a `.wsz` skin — pixel-faithful
- * chrome with every sprite in place. Presentational only (Ph2); transport
- * wiring + sliders land in Ph3, dynamic readouts in Ph4.
+ * A skin slider: a track sprite with a draggable thumb. `value` is 0..1 and
+ * `onChange` fires with the new fraction during drag.
  *
- * `scale` renders the 275×116 window larger while keeping sprites crisp.
+ * Some Winamp track sprites (e.g. VOLUME) are a vertical strip of `frames`
+ * level-variants; pass `frames`/`frameHeight` to window into the right one for
+ * the current value. Single-frame tracks (e.g. POSBAR) omit them.
+ */
+declare function Slider({ background, thumb, thumbActive, value, onChange, trackWidth, trackHeight, frames, frameHeight, style, }: {
+    background: SpriteName;
+    thumb: SpriteName;
+    thumbActive?: SpriteName;
+    value: number;
+    onChange?: (value: number) => void;
+    trackWidth: number;
+    trackHeight: number;
+    frames?: number;
+    frameHeight?: number;
+    style?: CSSProperties;
+}): react.JSX.Element;
+
+/**
+ * Classic Winamp main window rendered from a `.wsz` skin and driven by the
+ * surrounding {@link PlayerProvider}. Transport buttons show their pressed
+ * sprite and control playback; the position and volume sliders track and set
+ * the engine. Must be rendered inside a `<PlayerProvider>`.
+ *
+ * Dynamic readouts (time digits, marquee, visualizer) are Ph4.
  */
 declare function ClassicWinampPlayer({ skinUrl, scale, }: {
     skinUrl: string;
     scale?: number;
 }): react.JSX.Element;
 
-export { ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Sprite, SpriteButton, type SpriteDef, type SpriteName, type UseSkinResult, WinampPlayer, parsePledit, parseSkin, parseViscolor, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
+export { ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, type UseSkinResult, WinampPlayer, parsePledit, parseSkin, parseViscolor, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };

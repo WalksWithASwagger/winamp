@@ -1,37 +1,32 @@
 "use client";
 
 import type { CSSProperties } from "react";
+import { usePlayer } from "../PlayerProvider";
 import { useSkin } from "./useSkin";
 import { SkinProvider } from "./SkinContext";
-import { Sprite } from "./Sprite";
+import { Sprite, SpriteButton } from "./Sprite";
+import { Slider } from "./Slider";
 import type { SpriteName } from "./skinSprites";
 
 const MAIN_WIDTH = 275;
 const MAIN_HEIGHT = 116;
 
-// Static element positions on the 275×116 main window, as [left, top].
-// Classic Winamp geometry, ported from webamp (MIT) css/main-window.css.
-// Sliders (volume/balance/position thumbs) and dynamic readouts (time,
-// marquee, visualizer) are added in Ph3/Ph4 — the background art shows their
-// grooves so the window already reads complete.
-const PLACED: Array<[SpriteName, number, number]> = [
+// Non-interactive chrome, as [sprite, left, top]. Classic Winamp geometry
+// ported from webamp (MIT) css/main-window.css. EQ/playlist/shuffle/repeat
+// stay static here — they open other windows (Ph5/Ph6) or need engine state
+// (Ph8); the transport + sliders below are the Ph3 wiring.
+const STATIC: Array<[SpriteName, number, number]> = [
   ["MAIN_TITLE_BAR_SELECTED", 0, 0],
   ["MAIN_OPTIONS_BUTTON", 6, 3],
   ["MAIN_MINIMIZE_BUTTON", 244, 3],
   ["MAIN_CLOSE_BUTTON", 264, 3],
-  ["MAIN_STOPPED_INDICATOR", 26, 28],
   ["MAIN_MONO", 212, 41],
   ["MAIN_STEREO", 239, 41],
-  ["MAIN_PREVIOUS_BUTTON", 16, 88],
-  ["MAIN_PLAY_BUTTON", 39, 88],
-  ["MAIN_PAUSE_BUTTON", 62, 88],
-  ["MAIN_STOP_BUTTON", 85, 88],
-  ["MAIN_NEXT_BUTTON", 108, 88],
-  ["MAIN_EJECT_BUTTON", 136, 89],
-  ["MAIN_SHUFFLE_BUTTON", 164, 89],
-  ["MAIN_REPEAT_BUTTON", 210, 89],
   ["MAIN_EQ_BUTTON", 219, 58],
   ["MAIN_PLAYLIST_BUTTON", 242, 58],
+  ["MAIN_SHUFFLE_BUTTON", 164, 89],
+  ["MAIN_REPEAT_BUTTON", 210, 89],
+  ["MAIN_EJECT_BUTTON", 136, 89],
 ];
 
 const placed = (left: number, top: number): CSSProperties => ({
@@ -41,11 +36,12 @@ const placed = (left: number, top: number): CSSProperties => ({
 });
 
 /**
- * Static classic main window rendered from a `.wsz` skin — pixel-faithful
- * chrome with every sprite in place. Presentational only (Ph2); transport
- * wiring + sliders land in Ph3, dynamic readouts in Ph4.
+ * Classic Winamp main window rendered from a `.wsz` skin and driven by the
+ * surrounding {@link PlayerProvider}. Transport buttons show their pressed
+ * sprite and control playback; the position and volume sliders track and set
+ * the engine. Must be rendered inside a `<PlayerProvider>`.
  *
- * `scale` renders the 275×116 window larger while keeping sprites crisp.
+ * Dynamic readouts (time digits, marquee, visualizer) are Ph4.
  */
 export function ClassicWinampPlayer({
   skinUrl,
@@ -55,15 +51,27 @@ export function ClassicWinampPlayer({
   scale?: number;
 }) {
   const { skin, status } = useSkin(skinUrl);
+  const { playing, time, duration, volume, toggle, prev, next, seek, setVolume } =
+    usePlayer();
+
+  const play = () => {
+    if (!playing) toggle();
+  };
+  const pause = () => {
+    if (playing) toggle();
+  };
+  const stop = () => {
+    if (playing) toggle();
+    seek(0);
+  };
+
+  const position = duration > 0 ? time / duration : 0;
 
   return (
     <SkinProvider skin={skin}>
       <div
         data-skin-status={status}
-        style={{
-          width: MAIN_WIDTH * scale,
-          height: MAIN_HEIGHT * scale,
-        }}
+        style={{ width: MAIN_WIDTH * scale, height: MAIN_HEIGHT * scale }}
       >
         <div
           style={{
@@ -76,9 +84,42 @@ export function ClassicWinampPlayer({
           }}
         >
           <Sprite name="MAIN_WINDOW_BACKGROUND" style={placed(0, 0)} />
-          {PLACED.map(([name, left, top]) => (
+          {STATIC.map(([name, left, top]) => (
             <Sprite key={name} name={name} style={placed(left, top)} />
           ))}
+          <Sprite
+            name={playing ? "MAIN_PLAYING_INDICATOR" : "MAIN_STOPPED_INDICATOR"}
+            style={placed(26, 28)}
+          />
+
+          <Slider
+            background="MAIN_POSITION_SLIDER_BACKGROUND"
+            thumb="MAIN_POSITION_SLIDER_THUMB"
+            thumbActive="MAIN_POSITION_SLIDER_THUMB_SELECTED"
+            value={position}
+            onChange={(v) => duration > 0 && seek(v * duration)}
+            trackWidth={248}
+            trackHeight={10}
+            style={placed(16, 72)}
+          />
+          <Slider
+            background="MAIN_VOLUME_BACKGROUND"
+            thumb="MAIN_VOLUME_THUMB"
+            thumbActive="MAIN_VOLUME_THUMB_SELECTED"
+            value={volume}
+            onChange={setVolume}
+            trackWidth={68}
+            trackHeight={13}
+            frames={28}
+            frameHeight={15}
+            style={placed(107, 57)}
+          />
+
+          <SpriteButton up="MAIN_PREVIOUS_BUTTON" down="MAIN_PREVIOUS_BUTTON_ACTIVE" onClick={prev} title="Previous" style={placed(16, 88)} />
+          <SpriteButton up="MAIN_PLAY_BUTTON" down="MAIN_PLAY_BUTTON_ACTIVE" onClick={play} title="Play" style={placed(39, 88)} />
+          <SpriteButton up="MAIN_PAUSE_BUTTON" down="MAIN_PAUSE_BUTTON_ACTIVE" onClick={pause} title="Pause" style={placed(62, 88)} />
+          <SpriteButton up="MAIN_STOP_BUTTON" down="MAIN_STOP_BUTTON_ACTIVE" onClick={stop} title="Stop" style={placed(85, 88)} />
+          <SpriteButton up="MAIN_NEXT_BUTTON" down="MAIN_NEXT_BUTTON_ACTIVE" onClick={next} title="Next" style={placed(108, 88)} />
         </div>
       </div>
     </SkinProvider>

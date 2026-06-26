@@ -1130,26 +1130,98 @@ function SpriteButton({
     }
   );
 }
+function Slider({
+  background,
+  thumb,
+  thumbActive,
+  value,
+  onChange,
+  trackWidth,
+  trackHeight,
+  frames,
+  frameHeight,
+  style
+}) {
+  const skin = useSkinContext();
+  const ref = react.useRef(null);
+  const [dragging, setDragging] = react.useState(false);
+  const v = Math.min(1, Math.max(0, value));
+  const bgUri = skin?.sprites[background];
+  const thumbUri = skin?.sprites[dragging && thumbActive ? thumbActive : thumb];
+  const thumbW = SPRITE_DIMS[thumb]?.width ?? 0;
+  const thumbH = SPRITE_DIMS[thumb]?.height ?? 0;
+  const frameY = frames && frameHeight ? Math.round(v * (frames - 1)) * frameHeight : 0;
+  const emit = (clientX) => {
+    const el = ref.current;
+    if (!el || !onChange) return;
+    const rect = el.getBoundingClientRect();
+    onChange(Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)));
+  };
+  const onDown = (e) => {
+    setDragging(true);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+    }
+    emit(e.clientX);
+  };
+  const onMove = (e) => {
+    if (dragging) emit(e.clientX);
+  };
+  const stop = () => setDragging(false);
+  return /* @__PURE__ */ jsxRuntime.jsx(
+    "div",
+    {
+      ref,
+      onPointerDown: onDown,
+      onPointerMove: onMove,
+      onPointerUp: stop,
+      onPointerCancel: stop,
+      style: {
+        position: "absolute",
+        width: trackWidth,
+        height: trackHeight,
+        backgroundImage: bgUri ? `url(${bgUri})` : void 0,
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: `0 -${frameY}px`,
+        imageRendering: "pixelated",
+        touchAction: "none",
+        cursor: "pointer",
+        ...style
+      },
+      children: /* @__PURE__ */ jsxRuntime.jsx(
+        "div",
+        {
+          style: {
+            position: "absolute",
+            left: v * (trackWidth - thumbW),
+            top: (trackHeight - thumbH) / 2,
+            width: thumbW,
+            height: thumbH,
+            backgroundImage: thumbUri ? `url(${thumbUri})` : void 0,
+            backgroundRepeat: "no-repeat",
+            imageRendering: "pixelated",
+            pointerEvents: "none"
+          }
+        }
+      )
+    }
+  );
+}
 var MAIN_WIDTH = 275;
 var MAIN_HEIGHT = 116;
-var PLACED = [
+var STATIC = [
   ["MAIN_TITLE_BAR_SELECTED", 0, 0],
   ["MAIN_OPTIONS_BUTTON", 6, 3],
   ["MAIN_MINIMIZE_BUTTON", 244, 3],
   ["MAIN_CLOSE_BUTTON", 264, 3],
-  ["MAIN_STOPPED_INDICATOR", 26, 28],
   ["MAIN_MONO", 212, 41],
   ["MAIN_STEREO", 239, 41],
-  ["MAIN_PREVIOUS_BUTTON", 16, 88],
-  ["MAIN_PLAY_BUTTON", 39, 88],
-  ["MAIN_PAUSE_BUTTON", 62, 88],
-  ["MAIN_STOP_BUTTON", 85, 88],
-  ["MAIN_NEXT_BUTTON", 108, 88],
-  ["MAIN_EJECT_BUTTON", 136, 89],
+  ["MAIN_EQ_BUTTON", 219, 58],
+  ["MAIN_PLAYLIST_BUTTON", 242, 58],
   ["MAIN_SHUFFLE_BUTTON", 164, 89],
   ["MAIN_REPEAT_BUTTON", 210, 89],
-  ["MAIN_EQ_BUTTON", 219, 58],
-  ["MAIN_PLAYLIST_BUTTON", 242, 58]
+  ["MAIN_EJECT_BUTTON", 136, 89]
 ];
 var placed = (left, top) => ({
   position: "absolute",
@@ -1161,14 +1233,23 @@ function ClassicWinampPlayer({
   scale = 1
 }) {
   const { skin, status } = useSkin(skinUrl);
+  const { playing, time, duration, volume, toggle, prev, next, seek, setVolume } = usePlayer();
+  const play = () => {
+    if (!playing) toggle();
+  };
+  const pause = () => {
+    if (playing) toggle();
+  };
+  const stop = () => {
+    if (playing) toggle();
+    seek(0);
+  };
+  const position = duration > 0 ? time / duration : 0;
   return /* @__PURE__ */ jsxRuntime.jsx(SkinProvider, { skin, children: /* @__PURE__ */ jsxRuntime.jsx(
     "div",
     {
       "data-skin-status": status,
-      style: {
-        width: MAIN_WIDTH * scale,
-        height: MAIN_HEIGHT * scale
-      },
+      style: { width: MAIN_WIDTH * scale, height: MAIN_HEIGHT * scale },
       children: /* @__PURE__ */ jsxRuntime.jsxs(
         "div",
         {
@@ -1182,7 +1263,47 @@ function ClassicWinampPlayer({
           },
           children: [
             /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "MAIN_WINDOW_BACKGROUND", style: placed(0, 0) }),
-            PLACED.map(([name, left, top]) => /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name, style: placed(left, top) }, name))
+            STATIC.map(([name, left, top]) => /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name, style: placed(left, top) }, name)),
+            /* @__PURE__ */ jsxRuntime.jsx(
+              Sprite,
+              {
+                name: playing ? "MAIN_PLAYING_INDICATOR" : "MAIN_STOPPED_INDICATOR",
+                style: placed(26, 28)
+              }
+            ),
+            /* @__PURE__ */ jsxRuntime.jsx(
+              Slider,
+              {
+                background: "MAIN_POSITION_SLIDER_BACKGROUND",
+                thumb: "MAIN_POSITION_SLIDER_THUMB",
+                thumbActive: "MAIN_POSITION_SLIDER_THUMB_SELECTED",
+                value: position,
+                onChange: (v) => duration > 0 && seek(v * duration),
+                trackWidth: 248,
+                trackHeight: 10,
+                style: placed(16, 72)
+              }
+            ),
+            /* @__PURE__ */ jsxRuntime.jsx(
+              Slider,
+              {
+                background: "MAIN_VOLUME_BACKGROUND",
+                thumb: "MAIN_VOLUME_THUMB",
+                thumbActive: "MAIN_VOLUME_THUMB_SELECTED",
+                value: volume,
+                onChange: setVolume,
+                trackWidth: 68,
+                trackHeight: 13,
+                frames: 28,
+                frameHeight: 15,
+                style: placed(107, 57)
+              }
+            ),
+            /* @__PURE__ */ jsxRuntime.jsx(SpriteButton, { up: "MAIN_PREVIOUS_BUTTON", down: "MAIN_PREVIOUS_BUTTON_ACTIVE", onClick: prev, title: "Previous", style: placed(16, 88) }),
+            /* @__PURE__ */ jsxRuntime.jsx(SpriteButton, { up: "MAIN_PLAY_BUTTON", down: "MAIN_PLAY_BUTTON_ACTIVE", onClick: play, title: "Play", style: placed(39, 88) }),
+            /* @__PURE__ */ jsxRuntime.jsx(SpriteButton, { up: "MAIN_PAUSE_BUTTON", down: "MAIN_PAUSE_BUTTON_ACTIVE", onClick: pause, title: "Pause", style: placed(62, 88) }),
+            /* @__PURE__ */ jsxRuntime.jsx(SpriteButton, { up: "MAIN_STOP_BUTTON", down: "MAIN_STOP_BUTTON_ACTIVE", onClick: stop, title: "Stop", style: placed(85, 88) }),
+            /* @__PURE__ */ jsxRuntime.jsx(SpriteButton, { up: "MAIN_NEXT_BUTTON", down: "MAIN_NEXT_BUTTON_ACTIVE", onClick: next, title: "Next", style: placed(108, 88) })
           ]
         }
       )
@@ -1197,6 +1318,7 @@ exports.PlayerProvider = PlayerProvider;
 exports.SKIN_SPRITES = SKIN_SPRITES;
 exports.SPRITE_DIMS = SPRITE_DIMS;
 exports.SkinProvider = SkinProvider;
+exports.Slider = Slider;
 exports.Sprite = Sprite;
 exports.SpriteButton = SpriteButton;
 exports.WinampPlayer = WinampPlayer;
