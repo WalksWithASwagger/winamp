@@ -873,11 +873,279 @@ function WinampPlayer({
   ] });
 }
 
+// src/classic/skinSprites.ts
+var SKIN_SPRITES = {
+  MAIN: [{ name: "MAIN_WINDOW_BACKGROUND", x: 0, y: 0, width: 275, height: 116 }],
+  CBUTTONS: [
+    { name: "MAIN_PREVIOUS_BUTTON", x: 0, y: 0, width: 23, height: 18 },
+    { name: "MAIN_PREVIOUS_BUTTON_ACTIVE", x: 0, y: 18, width: 23, height: 18 },
+    { name: "MAIN_PLAY_BUTTON", x: 23, y: 0, width: 23, height: 18 },
+    { name: "MAIN_PLAY_BUTTON_ACTIVE", x: 23, y: 18, width: 23, height: 18 },
+    { name: "MAIN_PAUSE_BUTTON", x: 46, y: 0, width: 23, height: 18 },
+    { name: "MAIN_PAUSE_BUTTON_ACTIVE", x: 46, y: 18, width: 23, height: 18 },
+    { name: "MAIN_STOP_BUTTON", x: 69, y: 0, width: 23, height: 18 },
+    { name: "MAIN_STOP_BUTTON_ACTIVE", x: 69, y: 18, width: 23, height: 18 },
+    { name: "MAIN_NEXT_BUTTON", x: 92, y: 0, width: 23, height: 18 },
+    { name: "MAIN_NEXT_BUTTON_ACTIVE", x: 92, y: 18, width: 22, height: 18 },
+    { name: "MAIN_EJECT_BUTTON", x: 114, y: 0, width: 22, height: 16 },
+    { name: "MAIN_EJECT_BUTTON_ACTIVE", x: 114, y: 16, width: 22, height: 16 }
+  ],
+  TITLEBAR: [
+    { name: "MAIN_TITLE_BAR", x: 27, y: 15, width: 275, height: 14 },
+    { name: "MAIN_TITLE_BAR_SELECTED", x: 27, y: 0, width: 275, height: 14 },
+    { name: "MAIN_OPTIONS_BUTTON", x: 0, y: 0, width: 9, height: 9 },
+    { name: "MAIN_OPTIONS_BUTTON_DEPRESSED", x: 0, y: 9, width: 9, height: 9 },
+    { name: "MAIN_MINIMIZE_BUTTON", x: 9, y: 0, width: 9, height: 9 },
+    { name: "MAIN_MINIMIZE_BUTTON_DEPRESSED", x: 9, y: 9, width: 9, height: 9 },
+    { name: "MAIN_CLOSE_BUTTON", x: 18, y: 0, width: 9, height: 9 },
+    { name: "MAIN_CLOSE_BUTTON_DEPRESSED", x: 18, y: 9, width: 9, height: 9 }
+  ],
+  MONOSTER: [
+    { name: "MAIN_STEREO", x: 0, y: 12, width: 29, height: 12 },
+    { name: "MAIN_STEREO_SELECTED", x: 0, y: 0, width: 29, height: 12 },
+    { name: "MAIN_MONO", x: 29, y: 12, width: 27, height: 12 },
+    { name: "MAIN_MONO_SELECTED", x: 29, y: 0, width: 27, height: 12 }
+  ],
+  PLAYPAUS: [
+    { name: "MAIN_PLAYING_INDICATOR", x: 0, y: 0, width: 9, height: 9 },
+    { name: "MAIN_PAUSED_INDICATOR", x: 9, y: 0, width: 9, height: 9 },
+    { name: "MAIN_STOPPED_INDICATOR", x: 18, y: 0, width: 9, height: 9 },
+    { name: "MAIN_WORKING_INDICATOR", x: 39, y: 0, width: 9, height: 9 }
+  ],
+  NUMBERS: [
+    { name: "MINUS_SIGN", x: 20, y: 6, width: 5, height: 1 },
+    { name: "DIGIT_0", x: 0, y: 0, width: 9, height: 13 },
+    { name: "DIGIT_1", x: 9, y: 0, width: 9, height: 13 },
+    { name: "DIGIT_2", x: 18, y: 0, width: 9, height: 13 },
+    { name: "DIGIT_3", x: 27, y: 0, width: 9, height: 13 },
+    { name: "DIGIT_4", x: 36, y: 0, width: 9, height: 13 },
+    { name: "DIGIT_5", x: 45, y: 0, width: 9, height: 13 },
+    { name: "DIGIT_6", x: 54, y: 0, width: 9, height: 13 },
+    { name: "DIGIT_7", x: 63, y: 0, width: 9, height: 13 },
+    { name: "DIGIT_8", x: 72, y: 0, width: 9, height: 13 },
+    { name: "DIGIT_9", x: 81, y: 0, width: 9, height: 13 }
+  ],
+  POSBAR: [
+    { name: "MAIN_POSITION_SLIDER_BACKGROUND", x: 0, y: 0, width: 248, height: 10 },
+    { name: "MAIN_POSITION_SLIDER_THUMB", x: 248, y: 0, width: 29, height: 10 },
+    { name: "MAIN_POSITION_SLIDER_THUMB_SELECTED", x: 278, y: 0, width: 29, height: 10 }
+  ],
+  VOLUME: [
+    { name: "MAIN_VOLUME_BACKGROUND", x: 0, y: 0, width: 68, height: 420 },
+    { name: "MAIN_VOLUME_THUMB", x: 15, y: 422, width: 14, height: 11 },
+    { name: "MAIN_VOLUME_THUMB_SELECTED", x: 0, y: 422, width: 14, height: 11 }
+  ],
+  BALANCE: [
+    { name: "MAIN_BALANCE_BACKGROUND", x: 9, y: 0, width: 38, height: 420 },
+    { name: "MAIN_BALANCE_THUMB", x: 15, y: 422, width: 14, height: 11 },
+    { name: "MAIN_BALANCE_THUMB_ACTIVE", x: 0, y: 422, width: 14, height: 11 }
+  ],
+  SHUFREP: [
+    { name: "MAIN_SHUFFLE_BUTTON", x: 28, y: 0, width: 47, height: 15 },
+    { name: "MAIN_SHUFFLE_BUTTON_SELECTED", x: 28, y: 30, width: 47, height: 15 },
+    { name: "MAIN_REPEAT_BUTTON", x: 0, y: 0, width: 28, height: 15 },
+    { name: "MAIN_REPEAT_BUTTON_SELECTED", x: 0, y: 30, width: 28, height: 15 },
+    { name: "MAIN_EQ_BUTTON", x: 0, y: 61, width: 23, height: 12 },
+    { name: "MAIN_EQ_BUTTON_SELECTED", x: 0, y: 73, width: 23, height: 12 },
+    { name: "MAIN_PLAYLIST_BUTTON", x: 23, y: 61, width: 23, height: 12 },
+    { name: "MAIN_PLAYLIST_BUTTON_SELECTED", x: 23, y: 73, width: 23, height: 12 }
+  ]
+};
+var SPRITE_DIMS = Object.fromEntries(
+  Object.values(SKIN_SPRITES).flat().map((s) => [s.name, { width: s.width, height: s.height }])
+);
+
+// src/classic/skinParser.ts
+var DEFAULT_VISCOLOR = [
+  "rgb(0,0,0)",
+  "rgb(24,33,41)",
+  "rgb(239,49,16)",
+  "rgb(206,41,16)",
+  "rgb(214,90,0)",
+  "rgb(214,102,0)",
+  "rgb(214,115,0)",
+  "rgb(198,123,8)",
+  "rgb(222,165,24)",
+  "rgb(214,181,33)",
+  "rgb(189,222,41)",
+  "rgb(148,222,33)",
+  "rgb(41,206,16)",
+  "rgb(50,190,16)",
+  "rgb(57,181,16)",
+  "rgb(49,156,8)",
+  "rgb(41,148,0)",
+  "rgb(24,132,8)",
+  "rgb(255,255,255)",
+  "rgb(214,214,222)",
+  "rgb(181,189,189)",
+  "rgb(160,170,175)",
+  "rgb(148,156,165)",
+  "rgb(150,150,150)"
+];
+function parseViscolor(text) {
+  const colors = text.split(/\r?\n/).map((line) => line.match(/^\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/)).filter((m) => m != null).map((m) => `rgb(${m[1]},${m[2]},${m[3]})`);
+  return Array.from({ length: 24 }, (_, i) => colors[i] ?? DEFAULT_VISCOLOR[i]);
+}
+function parsePledit(text) {
+  const get = (key) => {
+    const m = text.match(new RegExp(`^\\s*${key}\\s*=\\s*(#?[0-9a-fA-F]{6})`, "im"));
+    if (!m) return void 0;
+    return m[1].startsWith("#") ? m[1] : `#${m[1]}`;
+  };
+  return {
+    playlistNormal: get("Normal"),
+    playlistCurrent: get("Current"),
+    playlistNormalBackground: get("NormalBG"),
+    playlistSelectedBackground: get("SelectedBG")
+  };
+}
+function cropSprite(bitmap, s) {
+  const canvas = document.createElement("canvas");
+  canvas.width = s.width;
+  canvas.height = s.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("classic-skin: no 2d canvas context");
+  ctx.drawImage(bitmap, s.x, s.y, s.width, s.height, 0, 0, s.width, s.height);
+  return canvas.toDataURL();
+}
+async function parseSkin(buf) {
+  const { unzipSync } = await import('fflate');
+  const files = unzipSync(new Uint8Array(buf));
+  const byName = /* @__PURE__ */ new Map();
+  for (const [path, data] of Object.entries(files)) {
+    byName.set(path.split("/").pop().toLowerCase(), data);
+  }
+  const sprites = {};
+  for (const [bmp, defs] of Object.entries(SKIN_SPRITES)) {
+    const data = byName.get(`${bmp.toLowerCase()}.bmp`);
+    if (!data) continue;
+    const bitmap = await createImageBitmap(
+      new Blob([new Uint8Array(data)], { type: "image/bmp" })
+    );
+    for (const def of defs) sprites[def.name] = cropSprite(bitmap, def);
+    bitmap.close?.();
+  }
+  const decode = (name) => {
+    const data = byName.get(name);
+    return data ? new TextDecoder().decode(data) : void 0;
+  };
+  const viscolorText = decode("viscolor.txt");
+  const pleditText = decode("pledit.txt");
+  return {
+    sprites,
+    colors: {
+      viscolor: viscolorText ? parseViscolor(viscolorText) : DEFAULT_VISCOLOR,
+      ...pleditText ? parsePledit(pleditText) : {}
+    }
+  };
+}
+var cache = /* @__PURE__ */ new Map();
+function load(url) {
+  let pending = cache.get(url);
+  if (!pending) {
+    pending = fetch(url).then((r) => {
+      if (!r.ok) throw new Error(`skin fetch failed: ${r.status}`);
+      return r.arrayBuffer();
+    }).then(parseSkin);
+    pending.catch(() => cache.delete(url));
+    cache.set(url, pending);
+  }
+  return pending;
+}
+function useSkin(url) {
+  const [state, setState] = react.useState({
+    skin: null,
+    status: url ? "loading" : "ready",
+    error: null
+  });
+  react.useEffect(() => {
+    if (!url) {
+      setState({ skin: null, status: "ready", error: null });
+      return;
+    }
+    let alive = true;
+    setState((s) => ({ ...s, status: "loading", error: null }));
+    load(url).then((skin) => {
+      if (alive) setState({ skin, status: "ready", error: null });
+    }).catch((error) => {
+      if (alive) setState({ skin: null, status: "error", error });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [url]);
+  return state;
+}
+var SkinContext = react.createContext(null);
+function SkinProvider({
+  skin,
+  children
+}) {
+  return /* @__PURE__ */ jsxRuntime.jsx(SkinContext.Provider, { value: skin, children });
+}
+function useSkinContext() {
+  return react.useContext(SkinContext);
+}
+var base = (name, uri) => ({
+  width: SPRITE_DIMS[name]?.width,
+  height: SPRITE_DIMS[name]?.height,
+  backgroundImage: uri ? `url(${uri})` : void 0,
+  backgroundRepeat: "no-repeat",
+  imageRendering: "pixelated"
+});
+function Sprite({
+  name,
+  style
+}) {
+  const skin = useSkinContext();
+  return /* @__PURE__ */ jsxRuntime.jsx("div", { style: { ...base(name, skin?.sprites[name]), ...style } });
+}
+function SpriteButton({
+  up,
+  down,
+  onClick,
+  title,
+  style
+}) {
+  const skin = useSkinContext();
+  const [pressed, setPressed] = react.useState(false);
+  return /* @__PURE__ */ jsxRuntime.jsx(
+    "button",
+    {
+      type: "button",
+      title,
+      "aria-label": title,
+      onClick,
+      onPointerDown: () => setPressed(true),
+      onPointerUp: () => setPressed(false),
+      onPointerLeave: () => setPressed(false),
+      style: {
+        ...base(up, skin?.sprites[pressed ? down : up]),
+        padding: 0,
+        border: "none",
+        backgroundColor: "transparent",
+        cursor: "pointer",
+        ...style
+      }
+    }
+  );
+}
+
 exports.EQ_BANDS = EQ_BANDS;
 exports.EQ_MAX_DB = EQ_MAX_DB;
 exports.PlayerProvider = PlayerProvider;
+exports.SKIN_SPRITES = SKIN_SPRITES;
+exports.SPRITE_DIMS = SPRITE_DIMS;
+exports.SkinProvider = SkinProvider;
+exports.Sprite = Sprite;
+exports.SpriteButton = SpriteButton;
 exports.WinampPlayer = WinampPlayer;
+exports.parsePledit = parsePledit;
+exports.parseSkin = parseSkin;
+exports.parseViscolor = parseViscolor;
 exports.usePlayer = usePlayer;
 exports.usePrefersReducedMotion = usePrefersReducedMotion;
+exports.useSkin = useSkin;
+exports.useSkinContext = useSkinContext;
 //# sourceMappingURL=index.cjs.map
 //# sourceMappingURL=index.cjs.map

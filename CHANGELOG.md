@@ -11,6 +11,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `dev`, `typecheck`, and `check:dist` package scripts.
 - GitHub Actions CI (typecheck + dist-drift guard) and tag-triggered npm release workflow.
 - Vite demo playground under `examples/playground`.
+- Classic `.wsz` skin engine foundation (Ph1): `parseSkin`, `useSkin`,
+  `SkinProvider`/`useSkinContext`, and `Sprite`/`SpriteButton` primitives, with
+  ported main-window sprite coordinates. Parses real Winamp 2 skins
+  (unzip → BMP decode → sprite data-URIs). `fflate` is a dynamic-imported
+  dependency so the modern deck doesn't pay for it.
 
 ## [0.1.0]
 

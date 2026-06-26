@@ -2,7 +2,7 @@ import { useState } from "react";
 import { PlayerProvider, WinampPlayer } from "@walkswithaswagger/winamp";
 import "@walkswithaswagger/winamp/styles.css";
 import { collections } from "./tracks";
-import { ClassicSpike } from "./spike/ClassicSpike";
+import { ClassicSkinDemo } from "./ClassicSkinDemo";
 
 export function App() {
   const [active, setActive] = useState(collections[0]);
@@ -47,7 +47,7 @@ export function App() {
       {/* key forces a fresh PlayerProvider when the collection changes */}
       <PlayerProvider key={active.id} tracks={active.tracks}>
         <WinampPlayer wordmarkText={active.label} />
-        <ClassicSpike />
+        <ClassicSkinDemo />
       </PlayerProvider>
     </div>
   );
