@@ -21,6 +21,7 @@
     "web-audio"
   ],
   "type": "module",
+  "packageManager": "pnpm@10.28.2",
   "sideEffects": [
     "**/*.css"
   ],
