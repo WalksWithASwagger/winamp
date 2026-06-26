@@ -32,8 +32,12 @@ type PlayerValue = {
     analyser: AnalyserNode | null;
     bpm: number | null;
     eqGains: number[];
+    eqEnabled: boolean;
+    preamp: number;
     setEqGain: (band: number, db: number) => void;
     setEqGains: (gains: number[]) => void;
+    setEqEnabled: (on: boolean) => void;
+    setPreamp: (db: number) => void;
     cue: (id: string) => void;
     playTrack: (id: string) => void;
     toggle: () => void;
@@ -147,8 +151,8 @@ declare function SpriteButton({ up, down, onClick, title, style, }: {
  * level-variants; pass `frames`/`frameHeight` to window into the right one for
  * the current value. Single-frame tracks (e.g. POSBAR) omit them.
  */
-declare function Slider({ background, thumb, thumbActive, value, onChange, trackWidth, trackHeight, frames, frameHeight, style, }: {
-    background: SpriteName;
+declare function Slider({ background, thumb, thumbActive, value, onChange, trackWidth, trackHeight, frames, frameHeight, vertical, style, }: {
+    background?: SpriteName;
     thumb: SpriteName;
     thumbActive?: SpriteName;
     value: number;
@@ -157,6 +161,8 @@ declare function Slider({ background, thumb, thumbActive, value, onChange, track
     trackHeight: number;
     frames?: number;
     frameHeight?: number;
+    /** Vertical slider (value 1 = top), e.g. EQ bands. */
+    vertical?: boolean;
     style?: CSSProperties;
 }): react.JSX.Element;
 
@@ -168,6 +174,17 @@ declare function Slider({ background, thumb, thumbActive, value, onChange, track
  * read live engine state. Must be rendered inside a `<PlayerProvider>`.
  */
 declare function ClassicWinampPlayer({ skinUrl, scale, }: {
+    skinUrl: string;
+    scale?: number;
+}): react.JSX.Element;
+
+/**
+ * Classic Winamp equalizer window from a `.wsz` skin, driven by the surrounding
+ * {@link PlayerProvider}. The 10 band sliders map 1:1 to the engine's EQ_BANDS;
+ * preamp and the on/off toggle use the additive engine controls. Render inside a
+ * `<PlayerProvider>`, with the same `skinUrl` as the main window.
+ */
+declare function ClassicEqWindow({ skinUrl, scale, }: {
     skinUrl: string;
     scale?: number;
 }): react.JSX.Element;
@@ -205,4 +222,4 @@ declare function ClassicVisualizer({ analyser, left, top, }: {
 /** Resolve any character to its glyph sprite name (uppercase-folded). */
 declare const glyphFor: (ch: string) => string | undefined;
 
-export { BitmapText, ClassicVisualizer, ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, Marquee, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, TimeDisplay, type UseSkinResult, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
+export { BitmapText, ClassicEqWindow, ClassicVisualizer, ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, Marquee, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, TimeDisplay, type UseSkinResult, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };

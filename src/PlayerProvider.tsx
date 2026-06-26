@@ -26,8 +26,12 @@ type PlayerValue = {
   analyser: AnalyserNode | null;
   bpm: number | null;
   eqGains: number[];
+  eqEnabled: boolean;
+  preamp: number;
   setEqGain: (band: number, db: number) => void;
   setEqGains: (gains: number[]) => void;
+  setEqEnabled: (on: boolean) => void;
+  setPreamp: (db: number) => void;
   cue: (id: string) => void;
   playTrack: (id: string) => void;
   toggle: () => void;
@@ -61,6 +65,7 @@ export function PlayerProvider({
   const srcRef = useRef<MediaElementAudioSourceNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const eqRef = useRef<BiquadFilterNode[]>([]);
+  const preampRef = useRef<GainNode | null>(null);
 
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -69,9 +74,16 @@ export function PlayerProvider({
   const [volume, setVolumeState] = useState(0.85);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   const [eqGains, setEqGainsState] = useState<number[]>(() => EQ_BANDS.map(() => 0));
-  // Mirror of eqGains, updated only inside the setters (never during render) so
-  // the lazily-built graph picks up gains the user set before any audio existed.
+  const [eqEnabled, setEqEnabledState] = useState(true);
+  const [preamp, setPreampState] = useState(0);
+  // Mirrors of EQ state, updated only inside the setters (never during render)
+  // so the lazily-built graph picks up values set before any audio existed.
   const eqGainsRef = useRef<number[]>(EQ_BANDS.map(() => 0));
+  const eqEnabledRef = useRef(true);
+  const preampRefDb = useRef(0);
+
+  // Linear gain a peaking filter (or preamp) should apply for a dB value.
+  const dbToGain = (db: number) => 10 ** (db / 20);
 
   // Only tracks with a real audio file can be played; the rest still appear in
   // the playlist (dimmed) so the deck shows the whole album.
@@ -95,21 +107,24 @@ export function PlayerProvider({
     an.fftSize = 128;
     an.smoothingTimeConstant = 0.82;
 
-    // 10-band peaking-filter chain: src → eq0 → … → eq9 → analyser → destination.
-    // Gains default to 0 dB (inaudible passthrough) and pick up any value the
-    // user set before the graph existed.
+    // src → preamp → eq0 → … → eq9 → analyser → destination.
+    // Preamp + peaking filters default to passthrough and pick up any value the
+    // user set before the graph existed. EQ filter gains are 0 dB when disabled.
+    const preampNode = ac.createGain();
+    preampNode.gain.value = dbToGain(preampRefDb.current);
     const filters = EQ_BANDS.map((freq, i) => {
       const f = ac.createBiquadFilter();
       f.type = "peaking";
       f.frequency.value = freq;
       f.Q.value = 1;
-      f.gain.value = eqGainsRef.current[i] ?? 0;
+      f.gain.value = eqEnabledRef.current ? eqGainsRef.current[i] ?? 0 : 0;
       return f;
     });
+    src.connect(preampNode);
     const tail = filters.reduce<AudioNode>((prev, f) => {
       prev.connect(f);
       return f;
-    }, src);
+    }, preampNode);
     tail.connect(an);
     an.connect(ac.destination);
 
@@ -117,6 +132,7 @@ export function PlayerProvider({
     srcRef.current = src;
     analyserRef.current = an;
     eqRef.current = filters;
+    preampRef.current = preampNode;
     setAnalyser(an);
   }, []);
 
@@ -128,7 +144,7 @@ export function PlayerProvider({
     eqGainsRef.current = next;
     setEqGainsState(next);
     const f = eqRef.current[band];
-    if (f) f.gain.value = clamped;
+    if (f && eqEnabledRef.current) f.gain.value = clamped;
   }, []);
 
   const setEqGains = useCallback((gains: number[]) => {
@@ -137,10 +153,27 @@ export function PlayerProvider({
     );
     eqGainsRef.current = norm;
     setEqGainsState(norm);
+    if (!eqEnabledRef.current) return;
     norm.forEach((g, i) => {
       const f = eqRef.current[i];
       if (f) f.gain.value = g;
     });
+  }, []);
+
+  const setEqEnabled = useCallback((on: boolean) => {
+    eqEnabledRef.current = on;
+    setEqEnabledState(on);
+    // Bypass = flat filters; the stored gains are restored when re-enabled.
+    eqRef.current.forEach((f, i) => {
+      f.gain.value = on ? eqGainsRef.current[i] ?? 0 : 0;
+    });
+  }, []);
+
+  const setPreamp = useCallback((db: number) => {
+    const clamped = Math.max(-EQ_MAX_DB, Math.min(EQ_MAX_DB, db));
+    preampRefDb.current = clamped;
+    setPreampState(clamped);
+    if (preampRef.current) preampRef.current.gain.value = dbToGain(clamped);
   }, []);
 
   const driveScene = useCallback(
@@ -264,8 +297,12 @@ export function PlayerProvider({
       analyser,
       bpm: current?.bpm ?? null,
       eqGains,
+      eqEnabled,
+      preamp,
       setEqGain,
       setEqGains,
+      setEqEnabled,
+      setPreamp,
       cue,
       playTrack,
       toggle,
@@ -284,8 +321,12 @@ export function PlayerProvider({
       analyser,
       current,
       eqGains,
+      eqEnabled,
+      preamp,
       setEqGain,
       setEqGains,
+      setEqEnabled,
+      setPreamp,
       cue,
       playTrack,
       toggle,
