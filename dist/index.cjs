@@ -873,8 +873,91 @@ function WinampPlayer({
   ] });
 }
 
+// src/classic/font.ts
+var CHAR_W = 5;
+var CHAR_H = 6;
+var FONT_LOOKUP = {
+  a: [0, 0],
+  b: [0, 1],
+  c: [0, 2],
+  d: [0, 3],
+  e: [0, 4],
+  f: [0, 5],
+  g: [0, 6],
+  h: [0, 7],
+  i: [0, 8],
+  j: [0, 9],
+  k: [0, 10],
+  l: [0, 11],
+  m: [0, 12],
+  n: [0, 13],
+  o: [0, 14],
+  p: [0, 15],
+  q: [0, 16],
+  r: [0, 17],
+  s: [0, 18],
+  t: [0, 19],
+  u: [0, 20],
+  v: [0, 21],
+  w: [0, 22],
+  x: [0, 23],
+  y: [0, 24],
+  z: [0, 25],
+  '"': [0, 26],
+  "@": [0, 27],
+  " ": [0, 30],
+  "0": [1, 0],
+  "1": [1, 1],
+  "2": [1, 2],
+  "3": [1, 3],
+  "4": [1, 4],
+  "5": [1, 5],
+  "6": [1, 6],
+  "7": [1, 7],
+  "8": [1, 8],
+  "9": [1, 9],
+  ".": [1, 11],
+  ":": [1, 12],
+  "(": [1, 13],
+  ")": [1, 14],
+  "-": [1, 15],
+  "'": [1, 16],
+  "!": [1, 17],
+  _: [1, 18],
+  "+": [1, 19],
+  "\\": [1, 20],
+  "/": [1, 21],
+  "[": [1, 22],
+  "]": [1, 23],
+  "^": [1, 24],
+  "&": [1, 25],
+  "%": [1, 26],
+  ",": [1, 27],
+  "=": [1, 28],
+  $: [1, 29],
+  "#": [1, 30],
+  "?": [2, 3],
+  "*": [2, 4]
+};
+var FONT_CHAR_WIDTH = CHAR_W;
+var charSpriteName = (key) => `CHAR_${key.charCodeAt(0)}`;
+var glyphFor = (ch) => {
+  const key = ch.toLowerCase();
+  return key in FONT_LOOKUP ? charSpriteName(key) : void 0;
+};
+var TEXT_SPRITES = Object.entries(FONT_LOOKUP).map(
+  ([key, [row, col]]) => ({
+    name: charSpriteName(key),
+    x: col * CHAR_W,
+    y: row * CHAR_H,
+    width: CHAR_W,
+    height: CHAR_H
+  })
+);
+
 // src/classic/skinSprites.ts
 var SKIN_SPRITES = {
+  TEXT: TEXT_SPRITES,
   MAIN: [{ name: "MAIN_WINDOW_BACKGROUND", x: 0, y: 0, width: 275, height: 116 }],
   CBUTTONS: [
     { name: "MAIN_PREVIOUS_BUTTON", x: 0, y: 0, width: 23, height: 18 },
@@ -1208,6 +1291,119 @@ function Slider({
     }
   );
 }
+var DIGIT_LEFT = [48, 60, 78, 90];
+var DIGIT_TOP = 26;
+function TimeDisplay({ seconds }) {
+  const s = Math.max(0, Math.floor(seconds));
+  const mm = Math.min(99, Math.floor(s / 60));
+  const ss = s % 60;
+  const digits = [
+    mm >= 10 ? Math.floor(mm / 10) : null,
+    mm % 10,
+    Math.floor(ss / 10),
+    ss % 10
+  ];
+  return /* @__PURE__ */ jsxRuntime.jsx(jsxRuntime.Fragment, { children: digits.map(
+    (d, i) => d === null ? null : /* @__PURE__ */ jsxRuntime.jsx(
+      Sprite,
+      {
+        name: `DIGIT_${d}`,
+        style: { position: "absolute", left: DIGIT_LEFT[i], top: DIGIT_TOP }
+      },
+      i
+    )
+  ) });
+}
+function BitmapText({ text }) {
+  return /* @__PURE__ */ jsxRuntime.jsx("div", { style: { display: "flex" }, children: [...text].map((ch, i) => {
+    const name = glyphFor(ch) ?? glyphFor(" ");
+    return /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name }, i);
+  }) });
+}
+function Marquee({
+  text,
+  width = 154,
+  left = 111,
+  top = 24
+}) {
+  const reduced = usePrefersReducedMotion();
+  const [offset, setOffset] = react.useState(0);
+  const textWidth = text.length * FONT_CHAR_WIDTH;
+  const scrolls = textWidth > width && !reduced;
+  react.useEffect(() => {
+    if (!scrolls) {
+      setOffset(0);
+      return;
+    }
+    let raf = 0;
+    let last = null;
+    const loop = (t) => {
+      if (last == null) last = t;
+      const dt = t - last;
+      last = t;
+      setOffset((o) => o > textWidth + 10 ? -width : o + dt * 0.02);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [scrolls, textWidth, width]);
+  return /* @__PURE__ */ jsxRuntime.jsx(
+    "div",
+    {
+      style: { position: "absolute", left, top, width, height: 6, overflow: "hidden" },
+      children: /* @__PURE__ */ jsxRuntime.jsx("div", { style: { position: "absolute", left: -Math.round(offset) }, children: /* @__PURE__ */ jsxRuntime.jsx(BitmapText, { text }) })
+    }
+  );
+}
+var VIZ_W = 76;
+var VIZ_H = 16;
+var BARS = 19;
+function ClassicVisualizer({
+  analyser,
+  left = 24,
+  top = 43
+}) {
+  const skin = useSkinContext();
+  const ref = react.useRef(null);
+  const viscolor = skin?.colors.viscolor;
+  react.useEffect(() => {
+    const canvas = ref.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+    const colors = viscolor ?? [];
+    const bg = colors[0] ?? "#000";
+    const data = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
+    let raf = 0;
+    const draw = () => {
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, VIZ_W, VIZ_H);
+      if (analyser && data) {
+        analyser.getByteFrequencyData(data);
+        const barW = VIZ_W / BARS;
+        for (let i = 0; i < BARS; i++) {
+          const v = data[Math.floor(i / BARS * data.length * 0.7)] / 255;
+          const h = Math.round(v * VIZ_H);
+          for (let y = 0; y < h; y++) {
+            ctx.fillStyle = colors[2 + Math.floor(y / VIZ_H * 16)] ?? "#0c0";
+            ctx.fillRect(Math.floor(i * barW), VIZ_H - 1 - y, Math.ceil(barW) - 1 || 1, 1);
+          }
+        }
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => cancelAnimationFrame(raf);
+  }, [analyser, viscolor]);
+  return /* @__PURE__ */ jsxRuntime.jsx(
+    "canvas",
+    {
+      ref,
+      width: VIZ_W,
+      height: VIZ_H,
+      style: { position: "absolute", left, top, width: VIZ_W, height: VIZ_H, imageRendering: "pixelated" }
+    }
+  );
+}
 var MAIN_WIDTH = 275;
 var MAIN_HEIGHT = 116;
 var STATIC = [
@@ -1233,7 +1429,22 @@ function ClassicWinampPlayer({
   scale = 1
 }) {
   const { skin, status } = useSkin(skinUrl);
-  const { playing, time, duration, volume, toggle, prev, next, seek, setVolume } = usePlayer();
+  const {
+    playing,
+    time,
+    duration,
+    volume,
+    analyser,
+    allTracks,
+    currentId,
+    toggle,
+    prev,
+    next,
+    seek,
+    setVolume
+  } = usePlayer();
+  const current = currentId ? allTracks.find((t) => t.id === currentId) : null;
+  const title = current ? `${current.number}. ${current.title} - ${current.person}` : "WINAMP";
   const play = () => {
     if (!playing) toggle();
   };
@@ -1271,6 +1482,9 @@ function ClassicWinampPlayer({
                 style: placed(26, 28)
               }
             ),
+            /* @__PURE__ */ jsxRuntime.jsx(ClassicVisualizer, { analyser }),
+            /* @__PURE__ */ jsxRuntime.jsx(TimeDisplay, { seconds: time }),
+            /* @__PURE__ */ jsxRuntime.jsx(Marquee, { text: title }),
             /* @__PURE__ */ jsxRuntime.jsx(
               Slider,
               {
@@ -1311,9 +1525,12 @@ function ClassicWinampPlayer({
   ) });
 }
 
+exports.BitmapText = BitmapText;
+exports.ClassicVisualizer = ClassicVisualizer;
 exports.ClassicWinampPlayer = ClassicWinampPlayer;
 exports.EQ_BANDS = EQ_BANDS;
 exports.EQ_MAX_DB = EQ_MAX_DB;
+exports.Marquee = Marquee;
 exports.PlayerProvider = PlayerProvider;
 exports.SKIN_SPRITES = SKIN_SPRITES;
 exports.SPRITE_DIMS = SPRITE_DIMS;
@@ -1321,7 +1538,9 @@ exports.SkinProvider = SkinProvider;
 exports.Slider = Slider;
 exports.Sprite = Sprite;
 exports.SpriteButton = SpriteButton;
+exports.TimeDisplay = TimeDisplay;
 exports.WinampPlayer = WinampPlayer;
+exports.glyphFor = glyphFor;
 exports.parsePledit = parsePledit;
 exports.parseSkin = parseSkin;
 exports.parseViscolor = parseViscolor;

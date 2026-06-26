@@ -164,13 +164,45 @@ declare function Slider({ background, thumb, thumbActive, value, onChange, track
  * Classic Winamp main window rendered from a `.wsz` skin and driven by the
  * surrounding {@link PlayerProvider}. Transport buttons show their pressed
  * sprite and control playback; the position and volume sliders track and set
- * the engine. Must be rendered inside a `<PlayerProvider>`.
- *
- * Dynamic readouts (time digits, marquee, visualizer) are Ph4.
+ * the engine. The time display, song-title marquee, and spectrum visualizer
+ * read live engine state. Must be rendered inside a `<PlayerProvider>`.
  */
 declare function ClassicWinampPlayer({ skinUrl, scale, }: {
     skinUrl: string;
     scale?: number;
 }): react.JSX.Element;
 
-export { ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, type UseSkinResult, WinampPlayer, parsePledit, parseSkin, parseViscolor, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
+/** Elapsed time as four NUMBERS sprite digits (m m : s s). */
+declare function TimeDisplay({ seconds }: {
+    seconds: number;
+}): react.JSX.Element;
+/** A string drawn in the skin's 5×6 bitmap font. */
+declare function BitmapText({ text }: {
+    text: string;
+}): react.JSX.Element;
+/**
+ * Scrolling song-title marquee in the skin's bitmap font. Scrolls only when the
+ * text overflows the track, and not at all under prefers-reduced-motion.
+ */
+declare function Marquee({ text, width, left, top, }: {
+    text: string;
+    width?: number;
+    left?: number;
+    top?: number;
+}): react.JSX.Element;
+
+/**
+ * The classic spectrum analyzer, drawn from the player's AnalyserNode and
+ * colored with the skin's viscolor palette (index 0 = background, 2..17 = the
+ * bottom-to-top spectrum gradient). Idle when there's no analyser yet.
+ */
+declare function ClassicVisualizer({ analyser, left, top, }: {
+    analyser: AnalyserNode | null;
+    left?: number;
+    top?: number;
+}): react.JSX.Element;
+
+/** Resolve any character to its glyph sprite name (uppercase-folded). */
+declare const glyphFor: (ch: string) => string | undefined;
+
+export { BitmapText, ClassicVisualizer, ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, Marquee, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, TimeDisplay, type UseSkinResult, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };

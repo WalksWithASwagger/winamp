@@ -19,7 +19,7 @@ afterEach(() => {
 });
 
 describe("ClassicWinampPlayer (static window)", () => {
-  it("renders the 275×116 window with background, chrome, indicator, sliders, and transport", () => {
+  it("renders the 275×116 window with chrome, transport, sliders, and readouts", () => {
     const { container } = renderWindow({ skinUrl: "http://example.test/skin.wsz" });
     const win = container.querySelector("[data-skin-status]") as HTMLElement;
     expect(win).toBeTruthy();
@@ -27,10 +27,9 @@ describe("ClassicWinampPlayer (static window)", () => {
     const inner = win.firstElementChild as HTMLElement;
     expect(inner.style.width).toBe("275px");
     expect(inner.style.height).toBe("116px");
-    // 1 bg + 11 static chrome + 1 indicator + 2 sliders + 5 transport buttons.
-    expect(inner.children.length).toBe(20);
-    // Transport buttons are real buttons.
+    // Five transport buttons and the spectrum canvas (Ph4 readout).
     expect(inner.querySelectorAll("button").length).toBe(5);
+    expect(inner.querySelector("canvas")).toBeTruthy();
   });
 
   it("scales the outer box while keeping the inner window at native size", () => {

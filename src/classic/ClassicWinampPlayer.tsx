@@ -6,6 +6,8 @@ import { useSkin } from "./useSkin";
 import { SkinProvider } from "./SkinContext";
 import { Sprite, SpriteButton } from "./Sprite";
 import { Slider } from "./Slider";
+import { Marquee, TimeDisplay } from "./readouts";
+import { ClassicVisualizer } from "./ClassicVisualizer";
 import type { SpriteName } from "./skinSprites";
 
 const MAIN_WIDTH = 275;
@@ -39,9 +41,8 @@ const placed = (left: number, top: number): CSSProperties => ({
  * Classic Winamp main window rendered from a `.wsz` skin and driven by the
  * surrounding {@link PlayerProvider}. Transport buttons show their pressed
  * sprite and control playback; the position and volume sliders track and set
- * the engine. Must be rendered inside a `<PlayerProvider>`.
- *
- * Dynamic readouts (time digits, marquee, visualizer) are Ph4.
+ * the engine. The time display, song-title marquee, and spectrum visualizer
+ * read live engine state. Must be rendered inside a `<PlayerProvider>`.
  */
 export function ClassicWinampPlayer({
   skinUrl,
@@ -51,8 +52,25 @@ export function ClassicWinampPlayer({
   scale?: number;
 }) {
   const { skin, status } = useSkin(skinUrl);
-  const { playing, time, duration, volume, toggle, prev, next, seek, setVolume } =
-    usePlayer();
+  const {
+    playing,
+    time,
+    duration,
+    volume,
+    analyser,
+    allTracks,
+    currentId,
+    toggle,
+    prev,
+    next,
+    seek,
+    setVolume,
+  } = usePlayer();
+
+  const current = currentId ? allTracks.find((t) => t.id === currentId) : null;
+  const title = current
+    ? `${current.number}. ${current.title} - ${current.person}`
+    : "WINAMP";
 
   const play = () => {
     if (!playing) toggle();
@@ -91,6 +109,10 @@ export function ClassicWinampPlayer({
             name={playing ? "MAIN_PLAYING_INDICATOR" : "MAIN_STOPPED_INDICATOR"}
             style={placed(26, 28)}
           />
+
+          <ClassicVisualizer analyser={analyser} />
+          <TimeDisplay seconds={time} />
+          <Marquee text={title} />
 
           <Slider
             background="MAIN_POSITION_SLIDER_BACKGROUND"
