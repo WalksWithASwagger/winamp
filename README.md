@@ -86,8 +86,26 @@ built-in defaults — set any of these on `:root` (or `.deck`) to re-skin:
 
 ```bash
 pnpm install
-pnpm build      # tsup → dist/ (ESM + CJS + types) + styles.css
+pnpm dev         # tsup --watch — rebuild dist/ on change
+pnpm typecheck   # tsc --noEmit
+pnpm test        # vitest (watch); pnpm test:run for a single pass
+pnpm build       # tsup → dist/ (ESM + CJS + types) + styles.css
+pnpm check:dist  # rebuild and fail if committed dist/ drifts from src/
 ```
+
+`dist/` is committed so the package installs directly from git; `check:dist`
+(also run in CI) guards it against drifting out of sync with `src/`.
+
+### Playground
+
+`examples/playground` is a Vite app for trying the deck locally:
+
+```bash
+pnpm --filter playground dev   # http://localhost:5173
+```
+
+Run `pnpm dev` alongside it to see live source edits. See its README for adding
+audio.
 
 ## License
 
