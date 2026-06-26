@@ -1,0 +1,6 @@
+@walkswithaswagger/winamp
+
+This product includes sprite-coordinate data ported from Webamp
+(https://github.com/captbaritone/webamp), Copyright (c) Jordan Eldredge,
+licensed under the MIT License. The classic-skin sprite coordinates in
+src/classic/skinSprites.ts are derived from Webamp's js/skinSprites.ts.

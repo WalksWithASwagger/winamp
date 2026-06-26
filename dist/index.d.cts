@@ -1,5 +1,5 @@
 import * as react from 'react';
-import { ReactNode } from 'react';
+import { ReactNode, CSSProperties } from 'react';
 
 interface PlayerTrack {
     id: string;
@@ -60,4 +60,83 @@ declare function WinampPlayer({ storageKey, wordmarkSrc, wordmarkText, spectrumC
 
 declare function usePrefersReducedMotion(): boolean;
 
-export { EQ_BANDS, EQ_MAX_DB, type NowPlaying, PlayerProvider, type PlayerTrack, WinampPlayer, usePlayer, usePrefersReducedMotion };
+type SpriteDef = {
+    name: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+};
+/** Sprite definitions grouped by their source BMP file (sans extension). */
+declare const SKIN_SPRITES: Record<string, SpriteDef[]>;
+type SpriteName = string;
+/** name → { width, height }, derived once so primitives can size themselves. */
+declare const SPRITE_DIMS: Record<string, {
+    width: number;
+    height: number;
+}>;
+
+type SkinColors = {
+    /** 24 visualizer colors as CSS `rgb(...)` strings (from viscolor.txt). */
+    viscolor: string[];
+    /** Playlist editor colors (from pledit.txt). */
+    playlistNormal?: string;
+    playlistCurrent?: string;
+    playlistNormalBackground?: string;
+    playlistSelectedBackground?: string;
+};
+type Skin = {
+    /** Sprite name → data-URI of the cropped image. */
+    sprites: Partial<Record<SpriteName, string>>;
+    colors: SkinColors;
+};
+/** Parse viscolor.txt — 24 lines of `r,g,b` (trailing `// comment` allowed). */
+declare function parseViscolor(text: string): string[];
+/** Parse the `[Text]` color keys out of pledit.txt. */
+declare function parsePledit(text: string): Partial<SkinColors>;
+/**
+ * Parse a `.wsz` ArrayBuffer into a {@link Skin}: unzip, decode each BMP the
+ * browser supports natively, crop every known sprite to a data-URI, and read
+ * the color config. `fflate` is dynamic-imported so consumers of the modern
+ * deck never pull it into their bundle.
+ */
+declare function parseSkin(buf: ArrayBuffer): Promise<Skin>;
+
+type SkinStatus = "loading" | "ready" | "error";
+type UseSkinResult = {
+    skin: Skin | null;
+    status: SkinStatus;
+    error: Error | null;
+};
+/**
+ * Load and parse a `.wsz` skin by URL. Never throws into the render tree —
+ * parse/fetch failures surface as `status: "error"` so the caller can fall back
+ * to a base skin. Re-runs when `url` changes (runtime skin switching).
+ */
+declare function useSkin(url: string | null | undefined): UseSkinResult;
+
+declare function SkinProvider({ skin, children, }: {
+    skin: Skin | null;
+    children: ReactNode;
+}): react.JSX.Element;
+/** The active parsed skin, or null while loading / on error. */
+declare function useSkinContext(): Skin | null;
+
+/** A single skin sprite rendered at its native pixel size. */
+declare function Sprite({ name, style, }: {
+    name: SpriteName;
+    style?: CSSProperties;
+}): react.JSX.Element;
+/**
+ * A button that shows its `up` sprite normally and `down` while pressed.
+ * Sized from the `up` sprite.
+ */
+declare function SpriteButton({ up, down, onClick, title, style, }: {
+    up: SpriteName;
+    down: SpriteName;
+    onClick?: () => void;
+    title?: string;
+    style?: CSSProperties;
+}): react.JSX.Element;
+
+export { EQ_BANDS, EQ_MAX_DB, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Sprite, SpriteButton, type SpriteDef, type SpriteName, type UseSkinResult, WinampPlayer, parsePledit, parseSkin, parseViscolor, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
