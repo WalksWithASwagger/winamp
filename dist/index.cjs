@@ -1130,7 +1130,67 @@ function SpriteButton({
     }
   );
 }
+var MAIN_WIDTH = 275;
+var MAIN_HEIGHT = 116;
+var PLACED = [
+  ["MAIN_TITLE_BAR_SELECTED", 0, 0],
+  ["MAIN_OPTIONS_BUTTON", 6, 3],
+  ["MAIN_MINIMIZE_BUTTON", 244, 3],
+  ["MAIN_CLOSE_BUTTON", 264, 3],
+  ["MAIN_STOPPED_INDICATOR", 26, 28],
+  ["MAIN_MONO", 212, 41],
+  ["MAIN_STEREO", 239, 41],
+  ["MAIN_PREVIOUS_BUTTON", 16, 88],
+  ["MAIN_PLAY_BUTTON", 39, 88],
+  ["MAIN_PAUSE_BUTTON", 62, 88],
+  ["MAIN_STOP_BUTTON", 85, 88],
+  ["MAIN_NEXT_BUTTON", 108, 88],
+  ["MAIN_EJECT_BUTTON", 136, 89],
+  ["MAIN_SHUFFLE_BUTTON", 164, 89],
+  ["MAIN_REPEAT_BUTTON", 210, 89],
+  ["MAIN_EQ_BUTTON", 219, 58],
+  ["MAIN_PLAYLIST_BUTTON", 242, 58]
+];
+var placed = (left, top) => ({
+  position: "absolute",
+  left,
+  top
+});
+function ClassicWinampPlayer({
+  skinUrl,
+  scale = 1
+}) {
+  const { skin, status } = useSkin(skinUrl);
+  return /* @__PURE__ */ jsxRuntime.jsx(SkinProvider, { skin, children: /* @__PURE__ */ jsxRuntime.jsx(
+    "div",
+    {
+      "data-skin-status": status,
+      style: {
+        width: MAIN_WIDTH * scale,
+        height: MAIN_HEIGHT * scale
+      },
+      children: /* @__PURE__ */ jsxRuntime.jsxs(
+        "div",
+        {
+          style: {
+            position: "relative",
+            width: MAIN_WIDTH,
+            height: MAIN_HEIGHT,
+            transform: scale === 1 ? void 0 : `scale(${scale})`,
+            transformOrigin: "top left",
+            imageRendering: "pixelated"
+          },
+          children: [
+            /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "MAIN_WINDOW_BACKGROUND", style: placed(0, 0) }),
+            PLACED.map(([name, left, top]) => /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name, style: placed(left, top) }, name))
+          ]
+        }
+      )
+    }
+  ) });
+}
 
+exports.ClassicWinampPlayer = ClassicWinampPlayer;
 exports.EQ_BANDS = EQ_BANDS;
 exports.EQ_MAX_DB = EQ_MAX_DB;
 exports.PlayerProvider = PlayerProvider;

@@ -139,4 +139,16 @@ declare function SpriteButton({ up, down, onClick, title, style, }: {
     style?: CSSProperties;
 }): react.JSX.Element;
 
-export { EQ_BANDS, EQ_MAX_DB, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Sprite, SpriteButton, type SpriteDef, type SpriteName, type UseSkinResult, WinampPlayer, parsePledit, parseSkin, parseViscolor, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
+/**
+ * Static classic main window rendered from a `.wsz` skin — pixel-faithful
+ * chrome with every sprite in place. Presentational only (Ph2); transport
+ * wiring + sliders land in Ph3, dynamic readouts in Ph4.
+ *
+ * `scale` renders the 275×116 window larger while keeping sprites crisp.
+ */
+declare function ClassicWinampPlayer({ skinUrl, scale, }: {
+    skinUrl: string;
+    scale?: number;
+}): react.JSX.Element;
+
+export { ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Sprite, SpriteButton, type SpriteDef, type SpriteName, type UseSkinResult, WinampPlayer, parsePledit, parseSkin, parseViscolor, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
