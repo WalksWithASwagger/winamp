@@ -4,6 +4,7 @@
 // collections above still await real audio.
 import { useEffect, useMemo } from "react";
 import {
+  ClassicEqWindow,
   ClassicWinampPlayer,
   PlayerProvider,
   usePlayer,
@@ -69,16 +70,20 @@ export function ClassicSkinDemo() {
   return (
     <div style={{ marginTop: "2rem" }}>
       <h2 style={{ fontSize: "0.95rem", margin: "0 0 0.5rem" }}>
-        Classic skin — full main window (Ph4 · v1)
+        Classic skin — main + EQ windows (Ph5)
       </h2>
       <p style={{ margin: "0 0 0.75rem", color: "#8c819b", fontSize: "0.8rem" }}>
-        A real <code>.wsz</code> via <code>ClassicWinampPlayer</code>: transport,
-        sliders, time display, scrolling marquee, and spectrum — all driven by
-        its own <code>PlayerProvider</code> (a generated demo tone).
+        Real <code>.wsz</code> via <code>ClassicWinampPlayer</code> +{" "}
+        <code>ClassicEqWindow</code>: transport, sliders, time, marquee, spectrum,
+        and a 10-band EQ (1:1 with the engine) — one shared{" "}
+        <code>PlayerProvider</code>.
       </p>
       <PlayerProvider tracks={tracks}>
         <CueOnMount id="demo" />
-        <ClassicWinampPlayer skinUrl={SKIN_URL} scale={2} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <ClassicWinampPlayer skinUrl={SKIN_URL} scale={2} />
+          <ClassicEqWindow skinUrl={SKIN_URL} scale={2} />
+        </div>
       </PlayerProvider>
     </div>
   );

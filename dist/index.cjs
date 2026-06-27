@@ -24,6 +24,7 @@ function PlayerProvider({
   const srcRef = react.useRef(null);
   const analyserRef = react.useRef(null);
   const eqRef = react.useRef([]);
+  const preampRef = react.useRef(null);
   const [currentId, setCurrentId] = react.useState(null);
   const [playing, setPlaying] = react.useState(false);
   const [time, setTime] = react.useState(0);
@@ -31,7 +32,12 @@ function PlayerProvider({
   const [volume, setVolumeState] = react.useState(0.85);
   const [analyser, setAnalyser] = react.useState(null);
   const [eqGains, setEqGainsState] = react.useState(() => EQ_BANDS.map(() => 0));
+  const [eqEnabled, setEqEnabledState] = react.useState(true);
+  const [preamp, setPreampState] = react.useState(0);
   const eqGainsRef = react.useRef(EQ_BANDS.map(() => 0));
+  const eqEnabledRef = react.useRef(true);
+  const preampRefDb = react.useRef(0);
+  const dbToGain = (db) => 10 ** (db / 20);
   const playable = react.useMemo(() => tracks.filter((t) => t.audioUrl), [tracks]);
   const current = currentId ? tracks.find((t) => t.id === currentId) ?? null : null;
   const ensureGraph = react.useCallback(() => {
@@ -44,24 +50,28 @@ function PlayerProvider({
     const an = ac.createAnalyser();
     an.fftSize = 128;
     an.smoothingTimeConstant = 0.82;
+    const preampNode = ac.createGain();
+    preampNode.gain.value = dbToGain(preampRefDb.current);
     const filters = EQ_BANDS.map((freq, i) => {
       const f = ac.createBiquadFilter();
       f.type = "peaking";
       f.frequency.value = freq;
       f.Q.value = 1;
-      f.gain.value = eqGainsRef.current[i] ?? 0;
+      f.gain.value = eqEnabledRef.current ? eqGainsRef.current[i] ?? 0 : 0;
       return f;
     });
+    src.connect(preampNode);
     const tail = filters.reduce((prev2, f) => {
       prev2.connect(f);
       return f;
-    }, src);
+    }, preampNode);
     tail.connect(an);
     an.connect(ac.destination);
     ctxRef.current = ac;
     srcRef.current = src;
     analyserRef.current = an;
     eqRef.current = filters;
+    preampRef.current = preampNode;
     setAnalyser(an);
   }, []);
   const setEqGain = react.useCallback((band, db) => {
@@ -72,7 +82,7 @@ function PlayerProvider({
     eqGainsRef.current = next2;
     setEqGainsState(next2);
     const f = eqRef.current[band];
-    if (f) f.gain.value = clamped;
+    if (f && eqEnabledRef.current) f.gain.value = clamped;
   }, []);
   const setEqGains = react.useCallback((gains) => {
     const norm = EQ_BANDS.map(
@@ -80,10 +90,24 @@ function PlayerProvider({
     );
     eqGainsRef.current = norm;
     setEqGainsState(norm);
+    if (!eqEnabledRef.current) return;
     norm.forEach((g, i) => {
       const f = eqRef.current[i];
       if (f) f.gain.value = g;
     });
+  }, []);
+  const setEqEnabled = react.useCallback((on) => {
+    eqEnabledRef.current = on;
+    setEqEnabledState(on);
+    eqRef.current.forEach((f, i) => {
+      f.gain.value = on ? eqGainsRef.current[i] ?? 0 : 0;
+    });
+  }, []);
+  const setPreamp = react.useCallback((db) => {
+    const clamped = Math.max(-EQ_MAX_DB, Math.min(EQ_MAX_DB, db));
+    preampRefDb.current = clamped;
+    setPreampState(clamped);
+    if (preampRef.current) preampRef.current.gain.value = dbToGain(clamped);
   }, []);
   const driveScene = react.useCallback(
     (t) => {
@@ -188,8 +212,12 @@ function PlayerProvider({
       analyser,
       bpm: current?.bpm ?? null,
       eqGains,
+      eqEnabled,
+      preamp,
       setEqGain,
       setEqGains,
+      setEqEnabled,
+      setPreamp,
       cue,
       playTrack,
       toggle,
@@ -208,8 +236,12 @@ function PlayerProvider({
       analyser,
       current,
       eqGains,
+      eqEnabled,
+      preamp,
       setEqGain,
       setEqGains,
+      setEqEnabled,
+      setPreamp,
       cue,
       playTrack,
       toggle,
@@ -1032,6 +1064,21 @@ var SKIN_SPRITES = {
     { name: "MAIN_EQ_BUTTON_SELECTED", x: 0, y: 73, width: 23, height: 12 },
     { name: "MAIN_PLAYLIST_BUTTON", x: 23, y: 61, width: 23, height: 12 },
     { name: "MAIN_PLAYLIST_BUTTON_SELECTED", x: 23, y: 73, width: 23, height: 12 }
+  ],
+  EQMAIN: [
+    { name: "EQ_WINDOW_BACKGROUND", x: 0, y: 0, width: 275, height: 116 },
+    { name: "EQ_TITLE_BAR_SELECTED", x: 0, y: 134, width: 275, height: 14 },
+    { name: "EQ_TITLE_BAR", x: 0, y: 149, width: 275, height: 14 },
+    { name: "EQ_CLOSE_BUTTON", x: 0, y: 116, width: 9, height: 9 },
+    { name: "EQ_CLOSE_BUTTON_ACTIVE", x: 0, y: 125, width: 9, height: 9 },
+    { name: "EQ_SLIDER_THUMB", x: 0, y: 164, width: 11, height: 11 },
+    { name: "EQ_SLIDER_THUMB_SELECTED", x: 0, y: 176, width: 11, height: 11 },
+    { name: "EQ_ON_BUTTON", x: 10, y: 119, width: 26, height: 12 },
+    { name: "EQ_ON_BUTTON_SELECTED", x: 69, y: 119, width: 26, height: 12 },
+    { name: "EQ_AUTO_BUTTON", x: 36, y: 119, width: 32, height: 12 },
+    { name: "EQ_AUTO_BUTTON_SELECTED", x: 95, y: 119, width: 32, height: 12 },
+    { name: "EQ_PRESETS_BUTTON", x: 224, y: 164, width: 44, height: 12 },
+    { name: "EQ_PRESETS_BUTTON_SELECTED", x: 224, y: 176, width: 44, height: 12 }
   ]
 };
 var SPRITE_DIMS = Object.fromEntries(
@@ -1223,22 +1270,24 @@ function Slider({
   trackHeight,
   frames,
   frameHeight,
+  vertical = false,
   style
 }) {
   const skin = useSkinContext();
   const ref = react.useRef(null);
   const [dragging, setDragging] = react.useState(false);
   const v = Math.min(1, Math.max(0, value));
-  const bgUri = skin?.sprites[background];
+  const bgUri = background ? skin?.sprites[background] : void 0;
   const thumbUri = skin?.sprites[dragging && thumbActive ? thumbActive : thumb];
   const thumbW = SPRITE_DIMS[thumb]?.width ?? 0;
   const thumbH = SPRITE_DIMS[thumb]?.height ?? 0;
   const frameY = frames && frameHeight ? Math.round(v * (frames - 1)) * frameHeight : 0;
-  const emit = (clientX) => {
+  const emit = (clientX, clientY) => {
     const el = ref.current;
     if (!el || !onChange) return;
     const rect = el.getBoundingClientRect();
-    onChange(Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)));
+    const frac = vertical ? 1 - (clientY - rect.top) / rect.height : (clientX - rect.left) / rect.width;
+    onChange(Math.min(1, Math.max(0, frac)));
   };
   const onDown = (e) => {
     setDragging(true);
@@ -1246,10 +1295,10 @@ function Slider({
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
     }
-    emit(e.clientX);
+    emit(e.clientX, e.clientY);
   };
   const onMove = (e) => {
-    if (dragging) emit(e.clientX);
+    if (dragging) emit(e.clientX, e.clientY);
   };
   const stop = () => setDragging(false);
   return /* @__PURE__ */ jsxRuntime.jsx(
@@ -1277,8 +1326,8 @@ function Slider({
         {
           style: {
             position: "absolute",
-            left: v * (trackWidth - thumbW),
-            top: (trackHeight - thumbH) / 2,
+            left: vertical ? (trackWidth - thumbW) / 2 : v * (trackWidth - thumbW),
+            top: vertical ? (1 - v) * (trackHeight - thumbH) : (trackHeight - thumbH) / 2,
             width: thumbW,
             height: thumbH,
             backgroundImage: thumbUri ? `url(${thumbUri})` : void 0,
@@ -1524,8 +1573,114 @@ function ClassicWinampPlayer({
     }
   ) });
 }
+var W = 275;
+var H = 116;
+var BAND_TOP = 38;
+var BAND_TRACK_H = 63;
+var BAND_X0 = 78;
+var BAND_STEP = 18;
+var placed2 = (left, top) => ({
+  position: "absolute",
+  left,
+  top
+});
+var gainToValue = (db) => (db + EQ_MAX_DB) / (2 * EQ_MAX_DB);
+var valueToGain = (v) => v * 2 * EQ_MAX_DB - EQ_MAX_DB;
+function EqGraph({ gains, preamp }) {
+  const skin = useSkinContext();
+  const ref = react.useRef(null);
+  const line = skin?.colors.viscolor?.[18] ?? "#00ff00";
+  react.useEffect(() => {
+    const ctx = ref.current?.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, 113, 19);
+    const y = (db) => 9.5 - db / EQ_MAX_DB * 9;
+    ctx.strokeStyle = line;
+    ctx.beginPath();
+    gains.forEach((g, i) => {
+      const x = i / (gains.length - 1) * 113;
+      const yy = y(g + preamp / 2);
+      i === 0 ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy);
+    });
+    ctx.stroke();
+  }, [gains, preamp, line]);
+  return /* @__PURE__ */ jsxRuntime.jsx(
+    "canvas",
+    {
+      ref,
+      width: 113,
+      height: 19,
+      style: { ...placed2(86, 17), width: 113, height: 19, imageRendering: "pixelated" }
+    }
+  );
+}
+function ClassicEqWindow({
+  skinUrl,
+  scale = 1
+}) {
+  const { skin, status } = useSkin(skinUrl);
+  const { eqGains, eqEnabled, preamp, setEqGain, setEqEnabled, setPreamp } = usePlayer();
+  return /* @__PURE__ */ jsxRuntime.jsx(SkinProvider, { skin, children: /* @__PURE__ */ jsxRuntime.jsx("div", { "data-eq-status": status, style: { width: W * scale, height: H * scale }, children: /* @__PURE__ */ jsxRuntime.jsxs(
+    "div",
+    {
+      style: {
+        position: "relative",
+        width: W,
+        height: H,
+        transform: scale === 1 ? void 0 : `scale(${scale})`,
+        transformOrigin: "top left",
+        imageRendering: "pixelated"
+      },
+      children: [
+        /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_WINDOW_BACKGROUND", style: placed2(0, 0) }),
+        /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_TITLE_BAR_SELECTED", style: placed2(0, 0) }),
+        /* @__PURE__ */ jsxRuntime.jsx(
+          SpriteButton,
+          {
+            up: eqEnabled ? "EQ_ON_BUTTON_SELECTED" : "EQ_ON_BUTTON",
+            down: eqEnabled ? "EQ_ON_BUTTON" : "EQ_ON_BUTTON_SELECTED",
+            onClick: () => setEqEnabled(!eqEnabled),
+            title: eqEnabled ? "EQ on" : "EQ off",
+            style: placed2(14, 18)
+          }
+        ),
+        /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_AUTO_BUTTON", style: placed2(40, 18) }),
+        /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_PRESETS_BUTTON", style: placed2(217, 18) }),
+        /* @__PURE__ */ jsxRuntime.jsx(EqGraph, { gains: eqGains, preamp }),
+        /* @__PURE__ */ jsxRuntime.jsx(
+          Slider,
+          {
+            thumb: "EQ_SLIDER_THUMB",
+            thumbActive: "EQ_SLIDER_THUMB_SELECTED",
+            value: gainToValue(preamp),
+            onChange: (v) => setPreamp(valueToGain(v)),
+            trackWidth: 11,
+            trackHeight: BAND_TRACK_H,
+            vertical: true,
+            style: placed2(21, BAND_TOP)
+          }
+        ),
+        EQ_BANDS.map((_, i) => /* @__PURE__ */ jsxRuntime.jsx(
+          Slider,
+          {
+            thumb: "EQ_SLIDER_THUMB",
+            thumbActive: "EQ_SLIDER_THUMB_SELECTED",
+            value: gainToValue(eqGains[i]),
+            onChange: (v) => setEqGain(i, valueToGain(v)),
+            trackWidth: 11,
+            trackHeight: BAND_TRACK_H,
+            vertical: true,
+            style: placed2(BAND_X0 + i * BAND_STEP, BAND_TOP)
+          },
+          i
+        ))
+      ]
+    }
+  ) }) });
+}
 
 exports.BitmapText = BitmapText;
+exports.ClassicEqWindow = ClassicEqWindow;
 exports.ClassicVisualizer = ClassicVisualizer;
 exports.ClassicWinampPlayer = ClassicWinampPlayer;
 exports.EQ_BANDS = EQ_BANDS;

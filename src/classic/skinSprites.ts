@@ -93,6 +93,21 @@ export const SKIN_SPRITES: Record<string, SpriteDef[]> = {
     { name: "MAIN_PLAYLIST_BUTTON", x: 23, y: 61, width: 23, height: 12 },
     { name: "MAIN_PLAYLIST_BUTTON_SELECTED", x: 23, y: 73, width: 23, height: 12 },
   ],
+  EQMAIN: [
+    { name: "EQ_WINDOW_BACKGROUND", x: 0, y: 0, width: 275, height: 116 },
+    { name: "EQ_TITLE_BAR_SELECTED", x: 0, y: 134, width: 275, height: 14 },
+    { name: "EQ_TITLE_BAR", x: 0, y: 149, width: 275, height: 14 },
+    { name: "EQ_CLOSE_BUTTON", x: 0, y: 116, width: 9, height: 9 },
+    { name: "EQ_CLOSE_BUTTON_ACTIVE", x: 0, y: 125, width: 9, height: 9 },
+    { name: "EQ_SLIDER_THUMB", x: 0, y: 164, width: 11, height: 11 },
+    { name: "EQ_SLIDER_THUMB_SELECTED", x: 0, y: 176, width: 11, height: 11 },
+    { name: "EQ_ON_BUTTON", x: 10, y: 119, width: 26, height: 12 },
+    { name: "EQ_ON_BUTTON_SELECTED", x: 69, y: 119, width: 26, height: 12 },
+    { name: "EQ_AUTO_BUTTON", x: 36, y: 119, width: 32, height: 12 },
+    { name: "EQ_AUTO_BUTTON_SELECTED", x: 95, y: 119, width: 32, height: 12 },
+    { name: "EQ_PRESETS_BUTTON", x: 224, y: 164, width: 44, height: 12 },
+    { name: "EQ_PRESETS_BUTTON_SELECTED", x: 224, y: 176, width: 44, height: 12 },
+  ],
 };
 
 export type SpriteName = string;

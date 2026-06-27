@@ -83,6 +83,27 @@ describe("EQ + volume clamping", () => {
     act(() => h.api.setVolume(0.5));
     expect(h.api.volume).toBe(0.5);
   });
+
+  it("clamps setPreamp to ±EQ_MAX_DB", () => {
+    const h = mount();
+    expect(h.api.preamp).toBe(0);
+    act(() => h.api.setPreamp(50));
+    expect(h.api.preamp).toBe(EQ_MAX_DB);
+    act(() => h.api.setPreamp(-50));
+    expect(h.api.preamp).toBe(-EQ_MAX_DB);
+  });
+
+  it("toggles eqEnabled while preserving stored band gains", () => {
+    const h = mount();
+    expect(h.api.eqEnabled).toBe(true);
+    act(() => h.api.setEqGain(0, 6));
+    act(() => h.api.setEqEnabled(false));
+    expect(h.api.eqEnabled).toBe(false);
+    // Stored gains persist (bypass is at the audio graph, not the state).
+    expect(h.api.eqGains[0]).toBe(6);
+    act(() => h.api.setEqEnabled(true));
+    expect(h.api.eqEnabled).toBe(true);
+  });
 });
 
 describe("track stepping", () => {

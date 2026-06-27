@@ -22,9 +22,10 @@ export function Slider({
   trackHeight,
   frames,
   frameHeight,
+  vertical = false,
   style,
 }: {
-  background: SpriteName;
+  background?: SpriteName;
   thumb: SpriteName;
   thumbActive?: SpriteName;
   value: number;
@@ -33,6 +34,8 @@ export function Slider({
   trackHeight: number;
   frames?: number;
   frameHeight?: number;
+  /** Vertical slider (value 1 = top), e.g. EQ bands. */
+  vertical?: boolean;
   style?: CSSProperties;
 }) {
   const skin = useSkinContext();
@@ -40,7 +43,7 @@ export function Slider({
   const [dragging, setDragging] = useState(false);
 
   const v = Math.min(1, Math.max(0, value));
-  const bgUri = skin?.sprites[background];
+  const bgUri = background ? skin?.sprites[background] : undefined;
   const thumbUri = skin?.sprites[dragging && thumbActive ? thumbActive : thumb];
   const thumbW = SPRITE_DIMS[thumb]?.width ?? 0;
   const thumbH = SPRITE_DIMS[thumb]?.height ?? 0;
@@ -49,11 +52,14 @@ export function Slider({
   const frameY =
     frames && frameHeight ? Math.round(v * (frames - 1)) * frameHeight : 0;
 
-  const emit = (clientX: number) => {
+  const emit = (clientX: number, clientY: number) => {
     const el = ref.current;
     if (!el || !onChange) return;
     const rect = el.getBoundingClientRect();
-    onChange(Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)));
+    const frac = vertical
+      ? 1 - (clientY - rect.top) / rect.height
+      : (clientX - rect.left) / rect.width;
+    onChange(Math.min(1, Math.max(0, frac)));
   };
 
   const onDown = (e: PointerEvent<HTMLDivElement>) => {
@@ -65,10 +71,10 @@ export function Slider({
     } catch {
       // no-op
     }
-    emit(e.clientX);
+    emit(e.clientX, e.clientY);
   };
   const onMove = (e: PointerEvent<HTMLDivElement>) => {
-    if (dragging) emit(e.clientX);
+    if (dragging) emit(e.clientX, e.clientY);
   };
   const stop = () => setDragging(false);
 
@@ -95,8 +101,8 @@ export function Slider({
       <div
         style={{
           position: "absolute",
-          left: v * (trackWidth - thumbW),
-          top: (trackHeight - thumbH) / 2,
+          left: vertical ? (trackWidth - thumbW) / 2 : v * (trackWidth - thumbW),
+          top: vertical ? (1 - v) * (trackHeight - thumbH) : (trackHeight - thumbH) / 2,
           width: thumbW,
           height: thumbH,
           backgroundImage: thumbUri ? `url(${thumbUri})` : undefined,
