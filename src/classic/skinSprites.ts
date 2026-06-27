@@ -108,6 +108,16 @@ export const SKIN_SPRITES: Record<string, SpriteDef[]> = {
     { name: "EQ_PRESETS_BUTTON", x: 224, y: 164, width: 44, height: 12 },
     { name: "EQ_PRESETS_BUTTON_SELECTED", x: 224, y: 176, width: 44, height: 12 },
   ],
+  PLEDIT: [
+    { name: "PLAYLIST_TOP_LEFT_SELECTED", x: 0, y: 0, width: 25, height: 20 },
+    { name: "PLAYLIST_TITLE_BAR_SELECTED", x: 26, y: 0, width: 100, height: 20 },
+    { name: "PLAYLIST_TOP_TILE_SELECTED", x: 127, y: 0, width: 25, height: 20 },
+    { name: "PLAYLIST_TOP_RIGHT_CORNER_SELECTED", x: 153, y: 0, width: 25, height: 20 },
+    { name: "PLAYLIST_LEFT_TILE", x: 0, y: 42, width: 12, height: 29 },
+    { name: "PLAYLIST_RIGHT_TILE", x: 31, y: 42, width: 20, height: 29 },
+    { name: "PLAYLIST_BOTTOM_LEFT_CORNER", x: 0, y: 72, width: 125, height: 38 },
+    { name: "PLAYLIST_BOTTOM_RIGHT_CORNER", x: 126, y: 72, width: 150, height: 38 },
+  ],
 };
 
 export type SpriteName = string;

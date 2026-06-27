@@ -189,6 +189,17 @@ declare function ClassicEqWindow({ skinUrl, scale, }: {
     scale?: number;
 }): react.JSX.Element;
 
+/**
+ * Classic Winamp playlist window from a `.wsz` skin, driven by the surrounding
+ * {@link PlayerProvider}. Lists `allTracks`, colored from the skin's pledit.txt;
+ * clicking a playable row plays it; the current track is highlighted. Render
+ * inside a `<PlayerProvider>` with the same `skinUrl` as the main window.
+ */
+declare function ClassicPlaylistWindow({ skinUrl, scale, }: {
+    skinUrl: string;
+    scale?: number;
+}): react.JSX.Element;
+
 /** Elapsed time as four NUMBERS sprite digits (m m : s s). */
 declare function TimeDisplay({ seconds }: {
     seconds: number;
@@ -222,4 +233,4 @@ declare function ClassicVisualizer({ analyser, left, top, }: {
 /** Resolve any character to its glyph sprite name (uppercase-folded). */
 declare const glyphFor: (ch: string) => string | undefined;
 
-export { BitmapText, ClassicEqWindow, ClassicVisualizer, ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, Marquee, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, TimeDisplay, type UseSkinResult, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
+export { BitmapText, ClassicEqWindow, ClassicPlaylistWindow, ClassicVisualizer, ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, Marquee, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, TimeDisplay, type UseSkinResult, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };

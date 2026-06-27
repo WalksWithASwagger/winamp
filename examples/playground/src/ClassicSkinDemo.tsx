@@ -5,6 +5,7 @@
 import { useEffect, useMemo } from "react";
 import {
   ClassicEqWindow,
+  ClassicPlaylistWindow,
   ClassicWinampPlayer,
   PlayerProvider,
   usePlayer,
@@ -63,6 +64,8 @@ export function ClassicSkinDemo() {
         audioUrl: toneWavUrl(),
         art: { palette: ["#39c216"] },
       },
+      { id: "p2", number: 2, title: "Coming Soon", person: "Suno", bpm: 0, art: { palette: ["#39c216"] } },
+      { id: "p3", number: 3, title: "Add Your Audio", person: "Suno", bpm: 0, art: { palette: ["#39c216"] } },
     ],
     [],
   );
@@ -70,19 +73,19 @@ export function ClassicSkinDemo() {
   return (
     <div style={{ marginTop: "2rem" }}>
       <h2 style={{ fontSize: "0.95rem", margin: "0 0 0.5rem" }}>
-        Classic skin — main + EQ windows (Ph5)
+        Classic skin — main + EQ + playlist (Ph6)
       </h2>
       <p style={{ margin: "0 0 0.75rem", color: "#8c819b", fontSize: "0.8rem" }}>
         Real <code>.wsz</code> via <code>ClassicWinampPlayer</code> +{" "}
-        <code>ClassicEqWindow</code>: transport, sliders, time, marquee, spectrum,
-        and a 10-band EQ (1:1 with the engine) — one shared{" "}
-        <code>PlayerProvider</code>.
+        <code>ClassicEqWindow</code> + <code>ClassicPlaylistWindow</code> — one
+        shared <code>PlayerProvider</code>. Click a playlist row to play it.
       </p>
       <PlayerProvider tracks={tracks}>
         <CueOnMount id="demo" />
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <ClassicWinampPlayer skinUrl={SKIN_URL} scale={2} />
           <ClassicEqWindow skinUrl={SKIN_URL} scale={2} />
+          <ClassicPlaylistWindow skinUrl={SKIN_URL} scale={2} />
         </div>
       </PlayerProvider>
     </div>

@@ -13,6 +13,7 @@ export { Sprite, SpriteButton } from "./classic/Sprite";
 export { Slider } from "./classic/Slider";
 export { ClassicWinampPlayer } from "./classic/ClassicWinampPlayer";
 export { ClassicEqWindow } from "./classic/ClassicEqWindow";
+export { ClassicPlaylistWindow } from "./classic/ClassicPlaylistWindow";
 export { BitmapText, Marquee, TimeDisplay } from "./classic/readouts";
 export { ClassicVisualizer } from "./classic/ClassicVisualizer";
 export { glyphFor } from "./classic/font";
