@@ -81,6 +81,23 @@ declare function WinampPlayer({ storageKey, wordmarkSrc, wordmarkText, spectrumC
 
 declare function usePrefersReducedMotion(): boolean;
 
+type KeyboardShortcutOptions = {
+    /** Disable all shortcuts (default true). */
+    enabled?: boolean;
+    /** Seconds the arrow keys seek by (default 5). */
+    seekStep?: number;
+    /** Volume fraction the arrow keys change by (default 0.05). */
+    volumeStep?: number;
+};
+/**
+ * Global media keyboard shortcuts for the player, driven by `usePlayer()`:
+ * Space = play/pause, ←/→ = seek ±`seekStep`s, ↑/↓ = volume ±`volumeStep`.
+ * Ignored while a form field / button is focused. Must be used inside a
+ * `<PlayerProvider>`. `WinampPlayer` attaches this automatically; consumers
+ * using a custom UI can attach it themselves.
+ */
+declare function usePlayerKeyboardShortcuts(options?: KeyboardShortcutOptions): void;
+
 type SpriteDef = {
     name: string;
     x: number;
@@ -254,4 +271,4 @@ declare function ClassicVisualizer({ analyser, left, top, }: {
 /** Resolve any character to its glyph sprite name (uppercase-folded). */
 declare const glyphFor: (ch: string) => string | undefined;
 
-export { BitmapText, ClassicEqWindow, ClassicPlaylistWindow, ClassicVisualizer, ClassicWinampPlayer, type DeckTheme, EQ_BANDS, EQ_MAX_DB, Marquee, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, THEMES, type ThemePack, TimeDisplay, type UseSkinResult, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, skinMuseumUrl, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
+export { BitmapText, ClassicEqWindow, ClassicPlaylistWindow, ClassicVisualizer, ClassicWinampPlayer, type DeckTheme, EQ_BANDS, EQ_MAX_DB, type KeyboardShortcutOptions, Marquee, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, THEMES, type ThemePack, TimeDisplay, type UseSkinResult, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, skinMuseumUrl, usePlayer, usePlayerKeyboardShortcuts, usePrefersReducedMotion, useSkin, useSkinContext };

@@ -141,6 +141,13 @@ function PlayerProvider({
   const driveScene = react.useCallback(
     (t) => {
       onNowPlaying?.({ bpm: t.bpm, accent: t.art.palette[0] });
+      if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: t.title,
+          artist: t.person,
+          artwork: t.coverImage ? [{ src: t.coverImage }] : []
+        });
+      }
     },
     [onNowPlaying]
   );
@@ -215,6 +222,32 @@ function PlayerProvider({
     if (el) el.volume = clamped;
     setVolumeState(clamped);
   }, []);
+  react.useEffect(() => {
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    const ms = navigator.mediaSession;
+    const set = (action, handler) => {
+      try {
+        ms.setActionHandler(action, handler);
+      } catch {
+      }
+    };
+    set("play", () => toggle());
+    set("pause", () => toggle());
+    set("previoustrack", () => prev());
+    set("nexttrack", () => next());
+    set("seekto", (d) => {
+      if (typeof d.seekTime === "number") seek(d.seekTime);
+    });
+    return () => {
+      for (const a of ["play", "pause", "previoustrack", "nexttrack", "seekto"])
+        set(a, null);
+    };
+  }, [toggle, prev, next, seek]);
+  react.useEffect(() => {
+    if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = playing ? "playing" : "paused";
+    }
+  }, [playing]);
   react.useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
@@ -564,6 +597,46 @@ var THEMES = {
     spectrum: ["#ffb000", "#ffcf4d", "#ff8c00", "#ffd970", "#cc7000"]
   }
 };
+function usePlayerKeyboardShortcuts(options = {}) {
+  const { enabled = true, seekStep = 5, volumeStep = 0.05 } = options;
+  const { toggle, currentId, time, duration, volume, seek, setVolume } = usePlayer();
+  const live = react.useRef({ currentId, time, duration, volume });
+  live.current = { currentId, time, duration, volume };
+  react.useEffect(() => {
+    if (!enabled) return;
+    const onKey = (e) => {
+      const t = e.target;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "BUTTON" || t.isContentEditable))
+        return;
+      const { currentId: currentId2, time: time2, duration: duration2, volume: volume2 } = live.current;
+      switch (e.code) {
+        case "Space":
+          if (!currentId2) return;
+          e.preventDefault();
+          toggle();
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          seek(Math.max(0, time2 - seekStep));
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          seek(duration2 ? Math.min(duration2, time2 + seekStep) : time2 + seekStep);
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setVolume(Math.min(1, volume2 + volumeStep));
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          setVolume(Math.max(0, volume2 - volumeStep));
+          break;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [enabled, seekStep, volumeStep, toggle, seek, setVolume]);
+}
 var EQ_PRESETS = {
   Flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   Rock: [5, 4, 2, 0, -1, 0, 2, 4, 4, 5],
@@ -729,6 +802,7 @@ function WinampPlayer({
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, [x, y, reduced, storageKey, setEqGains]);
+  usePlayerKeyboardShortcuts();
   react.useEffect(() => {
     const KONAMI = [
       "arrowup",
@@ -745,15 +819,6 @@ function WinampPlayer({
     let seq = [];
     let timer;
     const onKey = (e) => {
-      const t = e.target;
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "BUTTON" || t.isContentEditable))
-        return;
-      if (e.code === "Space") {
-        if (!currentId) return;
-        e.preventDefault();
-        toggle();
-        return;
-      }
       seq.push(e.key.toLowerCase());
       if (seq.length > KONAMI.length) seq = seq.slice(-KONAMI.length);
       if (seq.length === KONAMI.length && KONAMI.every((k, i) => seq[i] === k)) {
@@ -769,7 +834,7 @@ function WinampPlayer({
       window.removeEventListener("keydown", onKey);
       clearTimeout(timer);
     };
-  }, [toggle, canViz, currentId]);
+  }, [canViz]);
   const cuedRef = react.useRef(false);
   react.useEffect(() => {
     if (cuedRef.current) return;
@@ -2124,6 +2189,7 @@ exports.parseSkin = parseSkin;
 exports.parseViscolor = parseViscolor;
 exports.skinMuseumUrl = skinMuseumUrl;
 exports.usePlayer = usePlayer;
+exports.usePlayerKeyboardShortcuts = usePlayerKeyboardShortcuts;
 exports.usePrefersReducedMotion = usePrefersReducedMotion;
 exports.useSkin = useSkin;
 exports.useSkinContext = useSkinContext;
