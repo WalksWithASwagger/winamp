@@ -328,8 +328,32 @@ function Visualizer({ onClose }) {
   const presetsRef = useRef({});
   const keysRef = useRef([]);
   const idxRef = useRef(0);
+  const cycleRef = useRef(void 0);
+  const resumeRef = useRef(void 0);
   const [status, setStatus] = useState("loading");
   const [presetName, setPresetName] = useState("");
+  const loadAt = useCallback((i, blend) => {
+    const keys = keysRef.current;
+    const viz = vizRef.current;
+    if (!viz || !keys.length) return;
+    const idx = (i % keys.length + keys.length) % keys.length;
+    idxRef.current = idx;
+    viz.loadPreset(presetsRef.current[keys[idx]], blend);
+    setPresetName(keys[idx]);
+  }, []);
+  const startCycle = useCallback(() => {
+    clearInterval(cycleRef.current);
+    cycleRef.current = setInterval(() => loadAt(idxRef.current + 1, 2.7), 16e3);
+  }, [loadAt]);
+  const manual = useCallback(
+    (target) => {
+      loadAt(target, 2.7);
+      clearInterval(cycleRef.current);
+      clearTimeout(resumeRef.current);
+      resumeRef.current = setTimeout(startCycle, 3e4);
+    },
+    [loadAt, startCycle]
+  );
   const fit = useCallback(() => {
     const c = canvasRef.current;
     const v = vizRef.current;
@@ -347,7 +371,6 @@ function Visualizer({ onClose }) {
     if (!canvas) return;
     let cancelled = false;
     let raf = 0;
-    let cycle;
     (async () => {
       try {
         const [bMod, pMod] = await Promise.all([
@@ -375,16 +398,11 @@ function Visualizer({ onClose }) {
         vizRef.current = viz;
         presetsRef.current = presets;
         keysRef.current = keys;
-        let i = Math.floor(Math.random() * keys.length);
+        const i = Math.floor(Math.random() * keys.length);
         idxRef.current = i;
         viz.loadPreset(presets[keys[i]], 0);
         setPresetName(keys[i]);
-        cycle = setInterval(() => {
-          i = (i + 1) % keys.length;
-          idxRef.current = i;
-          viz.loadPreset(presets[keys[i]], 2.7);
-          setPresetName(keys[i]);
-        }, 16e3);
+        startCycle();
         setStatus("ready");
         const loop = () => {
           viz.render();
@@ -400,20 +418,21 @@ function Visualizer({ onClose }) {
     return () => {
       cancelled = true;
       if (raf) cancelAnimationFrame(raf);
-      if (cycle) clearInterval(cycle);
+      clearInterval(cycleRef.current);
+      clearTimeout(resumeRef.current);
       ro.disconnect();
       vizRef.current = null;
     };
-  }, [analyser, fit]);
-  const nextPreset = useCallback(() => {
-    const keys = keysRef.current;
-    const viz = vizRef.current;
-    if (!viz || !keys.length) return;
-    const i = (idxRef.current + 1) % keys.length;
-    idxRef.current = i;
-    viz.loadPreset(presetsRef.current[keys[i]], 2.7);
-    setPresetName(keys[i]);
-  }, []);
+  }, [analyser, fit, startCycle]);
+  const nextPreset = useCallback(() => manual(idxRef.current + 1), [manual]);
+  const prevPreset = useCallback(() => manual(idxRef.current - 1), [manual]);
+  const shufflePreset = useCallback(() => {
+    const n = keysRef.current.length;
+    if (n < 2) return manual(idxRef.current);
+    let r = idxRef.current;
+    while (r === idxRef.current) r = Math.floor(Math.random() * n);
+    manual(r);
+  }, [manual]);
   const toggleFullscreen = useCallback(() => {
     const el = panelRef.current;
     if (!el) return;
@@ -425,7 +444,9 @@ function Visualizer({ onClose }) {
     /* @__PURE__ */ jsxs("div", { className: "deck-viz-bar", children: [
       /* @__PURE__ */ jsx("span", { className: "deck-viz-label", title: presetName || "milkdrop", children: status === "ready" && presetName ? presetName : "milkdrop" }),
       /* @__PURE__ */ jsx("span", { className: "deck-bar-fill", "aria-hidden": "true" }),
-      /* @__PURE__ */ jsx("button", { type: "button", className: "deck-winbtn", "aria-label": "Next preset", onClick: nextPreset, children: "\u21BB" }),
+      /* @__PURE__ */ jsx("button", { type: "button", className: "deck-winbtn", "aria-label": "Previous preset", onClick: prevPreset, children: "\u2039" }),
+      /* @__PURE__ */ jsx("button", { type: "button", className: "deck-winbtn", "aria-label": "Shuffle preset", onClick: shufflePreset, children: "\u292E" }),
+      /* @__PURE__ */ jsx("button", { type: "button", className: "deck-winbtn", "aria-label": "Next preset", onClick: nextPreset, children: "\u203A" }),
       /* @__PURE__ */ jsx(
         "button",
         {
@@ -441,11 +462,115 @@ function Visualizer({ onClose }) {
     (!analyser || status !== "ready") && /* @__PURE__ */ jsx("p", { className: "deck-viz-msg", children: !analyser ? "press play to see it move" : status === "unsupported" ? "visualizer needs WebGL2" : "loading milkdrop\u2026" })
   ] });
 }
+
+// src/themes.ts
+var THEMES = {
+  green: {
+    vars: {
+      "--deck-accent": "#27c93f",
+      "--wamp-cyan": "#39ff7a",
+      "--wamp-yellow": "#b6ff3a",
+      "--wamp-dim": "#5f8a6a",
+      "--wamp-muted": "#9fd8ab",
+      "--wamp-text": "#cdeacd",
+      "--wamp-bg-1": "#1c2a1f",
+      "--wamp-bg-2": "#111a13",
+      "--wamp-bg-3": "#0b110c",
+      "--wamp-bar-1": "#2c4231",
+      "--wamp-bar-2": "#1c2a1f",
+      "--wamp-bar-3": "#141f17",
+      "--wamp-btn-1": "#28402e",
+      "--wamp-btn-2": "#16241a",
+      "--wamp-btn-text": "#86c596",
+      "--wamp-key-text": "#bfead0",
+      "--wamp-lcd-1": "#04140a",
+      "--wamp-lcd-2": "#020a05",
+      "--wamp-edge-top": "#3c5a44"
+    },
+    spectrum: ["#39ff7a", "#27c93f", "#b6ff3a", "#1f8a3a", "#7CFC00"]
+  },
+  vaporwave: {
+    vars: {
+      "--deck-accent": "#ff77e1",
+      "--wamp-cyan": "#00eaff",
+      "--wamp-yellow": "#ffe66d",
+      "--wamp-dim": "#8a6aa8",
+      "--wamp-muted": "#d9b8ff",
+      "--wamp-text": "#f3e0ff",
+      "--wamp-bg-1": "#3a2358",
+      "--wamp-bg-2": "#241540",
+      "--wamp-bg-3": "#190d2e",
+      "--wamp-bar-1": "#5a3a86",
+      "--wamp-bar-2": "#3a2358",
+      "--wamp-bar-3": "#2a1846",
+      "--wamp-btn-1": "#4a2e72",
+      "--wamp-btn-2": "#2a1846",
+      "--wamp-btn-text": "#d9b8ff",
+      "--wamp-key-text": "#f3e0ff",
+      "--wamp-lcd-1": "#160a28",
+      "--wamp-lcd-2": "#0c0618",
+      "--wamp-edge-top": "#7a52a8"
+    },
+    spectrum: ["#ff77e1", "#00eaff", "#b76cff", "#ffe66d", "#ff6ec7"]
+  },
+  mono: {
+    vars: {
+      "--deck-accent": "#d6dae1",
+      "--wamp-cyan": "#eef1f5",
+      "--wamp-yellow": "#c4c8d0",
+      "--wamp-dim": "#7d828c",
+      "--wamp-muted": "#b6bac3",
+      "--wamp-text": "#e8eaee",
+      "--wamp-bg-1": "#33363b",
+      "--wamp-bg-2": "#1c1e22",
+      "--wamp-bg-3": "#141518",
+      "--wamp-bar-1": "#4b4e55",
+      "--wamp-bar-2": "#33363b",
+      "--wamp-bar-3": "#26282d",
+      "--wamp-btn-1": "#42454c",
+      "--wamp-btn-2": "#26282d",
+      "--wamp-btn-text": "#b6bac3",
+      "--wamp-key-text": "#e8eaee",
+      "--wamp-lcd-1": "#0a0b0d",
+      "--wamp-lcd-2": "#040506",
+      "--wamp-edge-top": "#5a5e66"
+    },
+    spectrum: ["#eef1f5", "#c4c8d0", "#9aa0aa", "#d6dae1", "#7d828c"]
+  },
+  amber: {
+    vars: {
+      "--deck-accent": "#ffb000",
+      "--wamp-cyan": "#ffcf4d",
+      "--wamp-yellow": "#ffd970",
+      "--wamp-dim": "#8a6a2a",
+      "--wamp-muted": "#e0b96a",
+      "--wamp-text": "#ffd98a",
+      "--wamp-bg-1": "#221806",
+      "--wamp-bg-2": "#160f04",
+      "--wamp-bg-3": "#0e0902",
+      "--wamp-bar-1": "#3a2a0a",
+      "--wamp-bar-2": "#221806",
+      "--wamp-bar-3": "#180f04",
+      "--wamp-btn-1": "#352607",
+      "--wamp-btn-2": "#1c1304",
+      "--wamp-btn-text": "#d09a3a",
+      "--wamp-key-text": "#ffce7a",
+      "--wamp-lcd-1": "#140c02",
+      "--wamp-lcd-2": "#0a0601",
+      "--wamp-edge-top": "#5a3f12"
+    },
+    spectrum: ["#ffb000", "#ffcf4d", "#ff8c00", "#ffd970", "#cc7000"]
+  }
+};
 var EQ_PRESETS = {
   Flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   Rock: [5, 4, 2, 0, -1, 0, 2, 4, 4, 5],
   Vocal: [-2, -1, 1, 3, 4, 4, 3, 1, 0, -1],
-  Bass: [6, 5, 4, 2, 0, 0, 0, 0, 0, 0]
+  Bass: [6, 5, 4, 2, 0, 0, 0, 0, 0, 0],
+  Treble: [-2, -2, -1, 0, 1, 3, 5, 6, 6, 6],
+  Classical: [4, 3, 2, 1, -1, -1, 0, 2, 3, 4],
+  Dance: [6, 5, 2, 0, 0, -2, -3, -3, 0, 0],
+  Loudness: [6, 4, 0, 0, -2, 0, -1, -4, 5, 1]
 };
 function eqBandLabel(hz) {
   return hz >= 1e3 ? `${hz / 1e3}k` : `${hz}`;
@@ -504,8 +629,11 @@ function WinampPlayer({
   storageKey = "deckState",
   wordmarkSrc = "/ethos-art/ethos-mask-cream.png",
   wordmarkText = "ETH\u1ECD\u0301S\xB7FM",
-  spectrumColors = DEFAULT_SPECTRUM_COLORS
+  spectrumColors,
+  theme
 } = {}) {
+  const themePack = theme ? THEMES[theme] : void 0;
+  const spectrum = spectrumColors ?? themePack?.spectrum ?? DEFAULT_SPECTRUM_COLORS;
   const {
     allTracks,
     currentId,
@@ -532,6 +660,7 @@ function WinampPlayer({
   const [copied, setCopied] = useState(false);
   const [shaded, setShaded] = useState(false);
   const [doubled, setDoubled] = useState(false);
+  const [eqPreset, setEqPreset] = useState(null);
   const [vizOpen, setVizOpen] = useState(false);
   const [canViz, setCanViz] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -559,6 +688,7 @@ function WinampPlayer({
         if (typeof s.y === "number") y.set(s.y);
         if (typeof s.doubled === "boolean") setDoubled(s.doubled);
         if (Array.isArray(s.eq)) setEqGains(s.eq);
+        if (typeof s.eqPreset === "string") setEqPreset(s.eqPreset);
       } catch {
       }
     };
@@ -695,7 +825,9 @@ function WinampPlayer({
           y: isMobile ? 0 : y,
           scale: doubled && !isMobile ? 2 : 1,
           transformOrigin: "100% 0%",
-          "--deck-accent": current?.art.palette[0] ?? "#f47a52"
+          ...themePack?.vars,
+          // Per-track palette tints over the theme; theme accent is the fallback.
+          "--deck-accent": current?.art.palette[0] ?? themePack?.vars["--deck-accent"] ?? "#f47a52"
         },
         children: [
           /* @__PURE__ */ jsxs(
@@ -806,7 +938,7 @@ function WinampPlayer({
                   children: showRemaining && duration ? `-${fmt(Math.max(0, duration - time))}` : fmt(time)
                 }
               ),
-              /* @__PURE__ */ jsx(Spectrum, { colors: spectrumColors }),
+              /* @__PURE__ */ jsx(Spectrum, { colors: spectrum }),
               /* @__PURE__ */ jsx("div", { className: "deck-marquee", "aria-live": "polite", children: /* @__PURE__ */ jsxs("span", { className: `deck-marquee-text${marqueeRuns ? " run" : ""}`, children: [
                 displayMarquee,
                 /* @__PURE__ */ jsx("span", { "aria-hidden": "true", className: "deck-marquee-gap", children: "      \u25C8      " }),
@@ -878,11 +1010,13 @@ function WinampPlayer({
                 "button",
                 {
                   type: "button",
-                  className: "deck-eq-preset",
+                  className: `deck-eq-preset${eqPreset === name ? " is-active" : ""}`,
+                  "aria-pressed": eqPreset === name,
                   onClick: () => {
                     const gains = EQ_PRESETS[name];
                     setEqGains(gains);
-                    persist({ eq: gains });
+                    setEqPreset(name);
+                    persist({ eq: gains, eqPreset: name });
                   },
                   children: name
                 },
@@ -903,7 +1037,8 @@ function WinampPlayer({
                       setEqGain(i, db);
                       const next2 = eqGains.slice();
                       next2[i] = db;
-                      persist({ eq: next2 });
+                      setEqPreset(null);
+                      persist({ eq: next2, eqPreset: null });
                     },
                     "aria-label": `${eqBandLabel(hz)} Hz, ${eqGains[i] ?? 0} decibels`
                   }
@@ -1963,6 +2098,6 @@ function skinMuseumUrl(md5) {
   return `${MUSEUM_CDN}/${md5}.wsz`;
 }
 
-export { BitmapText, ClassicEqWindow, ClassicPlaylistWindow, ClassicVisualizer, ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, Marquee, PlayerProvider, SKIN_SPRITES, SPRITE_DIMS, SkinProvider, Slider, Sprite, SpriteButton, TimeDisplay, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, skinMuseumUrl, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
+export { BitmapText, ClassicEqWindow, ClassicPlaylistWindow, ClassicVisualizer, ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, Marquee, PlayerProvider, SKIN_SPRITES, SPRITE_DIMS, SkinProvider, Slider, Sprite, SpriteButton, THEMES, TimeDisplay, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, skinMuseumUrl, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

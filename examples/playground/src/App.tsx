@@ -1,11 +1,24 @@
 import { useState } from "react";
-import { PlayerProvider, WinampPlayer } from "@walkswithaswagger/winamp";
+import {
+  PlayerProvider,
+  WinampPlayer,
+  type DeckTheme,
+} from "@walkswithaswagger/winamp";
 import "@walkswithaswagger/winamp/styles.css";
 import { collections } from "./tracks";
 import { ClassicSkinDemo } from "./ClassicSkinDemo";
 
+const THEME_OPTIONS: Array<{ label: string; value: DeckTheme | "default" }> = [
+  { label: "Default", value: "default" },
+  { label: "Green", value: "green" },
+  { label: "Vaporwave", value: "vaporwave" },
+  { label: "Mono", value: "mono" },
+  { label: "Amber", value: "amber" },
+];
+
 export function App() {
   const [active, setActive] = useState(collections[0]);
+  const [theme, setTheme] = useState<DeckTheme | "default">("default");
 
   return (
     <div
@@ -44,9 +57,27 @@ export function App() {
         ))}
       </div>
 
+      <label style={{ display: "block", marginBottom: "1.5rem", fontSize: "0.85rem" }}>
+        Modern deck theme:{" "}
+        <select
+          value={theme}
+          onChange={(e) => setTheme(e.target.value as DeckTheme | "default")}
+          style={{ background: "#2a2438", color: "#c8bdd7", border: "1px solid #3a3450", borderRadius: 4, padding: "2px 6px" }}
+        >
+          {THEME_OPTIONS.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
       {/* key forces a fresh PlayerProvider when the collection changes */}
       <PlayerProvider key={active.id} tracks={active.tracks}>
-        <WinampPlayer wordmarkText={active.label} />
+        <WinampPlayer
+          wordmarkText={active.label}
+          theme={theme === "default" ? undefined : theme}
+        />
       </PlayerProvider>
 
       {/* Classic window has its own provider + demo audio (see component). */}

@@ -20,8 +20,37 @@ export function Visualizer({ onClose }: { onClose: () => void }) {
   const presetsRef = useRef<Record<string, unknown>>({});
   const keysRef = useRef<string[]>([]);
   const idxRef = useRef(0);
+  const cycleRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  const resumeRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [status, setStatus] = useState<Status>("loading");
   const [presetName, setPresetName] = useState("");
+
+  // Load preset at index `i` (wraps) and update the label.
+  const loadAt = useCallback((i: number, blend: number) => {
+    const keys = keysRef.current;
+    const viz = vizRef.current;
+    if (!viz || !keys.length) return;
+    const idx = ((i % keys.length) + keys.length) % keys.length;
+    idxRef.current = idx;
+    viz.loadPreset(presetsRef.current[keys[idx]], blend);
+    setPresetName(keys[idx]);
+  }, []);
+
+  const startCycle = useCallback(() => {
+    clearInterval(cycleRef.current);
+    cycleRef.current = setInterval(() => loadAt(idxRef.current + 1, 2.7), 16000);
+  }, [loadAt]);
+
+  // Manual navigation pauses auto-cycle, then resumes it after a quiet spell.
+  const manual = useCallback(
+    (target: number) => {
+      loadAt(target, 2.7);
+      clearInterval(cycleRef.current);
+      clearTimeout(resumeRef.current);
+      resumeRef.current = setTimeout(startCycle, 30000);
+    },
+    [loadAt, startCycle],
+  );
 
   // Size the canvas backing store to the panel at the current DPR.
   const fit = useCallback(() => {
@@ -43,7 +72,6 @@ export function Visualizer({ onClose }: { onClose: () => void }) {
 
     let cancelled = false;
     let raf = 0;
-    let cycle: ReturnType<typeof setInterval> | undefined;
 
     (async () => {
       try {
@@ -79,16 +107,11 @@ export function Visualizer({ onClose }: { onClose: () => void }) {
         presetsRef.current = presets;
         keysRef.current = keys;
 
-        let i = Math.floor(Math.random() * keys.length);
+        const i = Math.floor(Math.random() * keys.length);
         idxRef.current = i;
         viz.loadPreset(presets[keys[i]], 0);
         setPresetName(keys[i]);
-        cycle = setInterval(() => {
-          i = (i + 1) % keys.length;
-          idxRef.current = i;
-          viz.loadPreset(presets[keys[i]], 2.7);
-          setPresetName(keys[i]);
-        }, 16000);
+        startCycle();
 
         setStatus("ready");
         const loop = () => {
@@ -109,21 +132,22 @@ export function Visualizer({ onClose }: { onClose: () => void }) {
     return () => {
       cancelled = true;
       if (raf) cancelAnimationFrame(raf);
-      if (cycle) clearInterval(cycle);
+      clearInterval(cycleRef.current);
+      clearTimeout(resumeRef.current);
       ro.disconnect();
       vizRef.current = null;
     };
-  }, [analyser, fit]);
+  }, [analyser, fit, startCycle]);
 
-  const nextPreset = useCallback(() => {
-    const keys = keysRef.current;
-    const viz = vizRef.current;
-    if (!viz || !keys.length) return;
-    const i = (idxRef.current + 1) % keys.length;
-    idxRef.current = i;
-    viz.loadPreset(presetsRef.current[keys[i]], 2.7);
-    setPresetName(keys[i]);
-  }, []);
+  const nextPreset = useCallback(() => manual(idxRef.current + 1), [manual]);
+  const prevPreset = useCallback(() => manual(idxRef.current - 1), [manual]);
+  const shufflePreset = useCallback(() => {
+    const n = keysRef.current.length;
+    if (n < 2) return manual(idxRef.current);
+    let r = idxRef.current;
+    while (r === idxRef.current) r = Math.floor(Math.random() * n);
+    manual(r);
+  }, [manual]);
 
   const toggleFullscreen = useCallback(() => {
     const el = panelRef.current;
@@ -140,8 +164,14 @@ export function Visualizer({ onClose }: { onClose: () => void }) {
           {status === "ready" && presetName ? presetName : "milkdrop"}
         </span>
         <span className="deck-bar-fill" aria-hidden="true" />
+        <button type="button" className="deck-winbtn" aria-label="Previous preset" onClick={prevPreset}>
+          ‹
+        </button>
+        <button type="button" className="deck-winbtn" aria-label="Shuffle preset" onClick={shufflePreset}>
+          ⤮
+        </button>
         <button type="button" className="deck-winbtn" aria-label="Next preset" onClick={nextPreset}>
-          ↻
+          ›
         </button>
         <button
           type="button"

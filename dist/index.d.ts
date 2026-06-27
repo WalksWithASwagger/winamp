@@ -61,11 +61,22 @@ declare function PlayerProvider({ tracks, onNowPlaying, children, }: {
     children: ReactNode;
 }): react.JSX.Element;
 
-declare function WinampPlayer({ storageKey, wordmarkSrc, wordmarkText, spectrumColors, }?: {
+type DeckTheme = "green" | "vaporwave" | "mono" | "amber";
+type ThemePack = {
+    /** CSS custom-property overrides applied to the deck root. */
+    vars: Record<string, string>;
+    /** Spectrum analyzer bar colors. */
+    spectrum: string[];
+};
+declare const THEMES: Record<DeckTheme, ThemePack>;
+
+declare function WinampPlayer({ storageKey, wordmarkSrc, wordmarkText, spectrumColors, theme, }?: {
     storageKey?: string;
     wordmarkSrc?: string;
     wordmarkText?: string;
     spectrumColors?: string[];
+    /** Named theme pack for the modern deck (distinct from .wsz classic skins). */
+    theme?: DeckTheme;
 }): react.JSX.Element;
 
 declare function usePrefersReducedMotion(): boolean;
@@ -243,4 +254,4 @@ declare function ClassicVisualizer({ analyser, left, top, }: {
 /** Resolve any character to its glyph sprite name (uppercase-folded). */
 declare const glyphFor: (ch: string) => string | undefined;
 
-export { BitmapText, ClassicEqWindow, ClassicPlaylistWindow, ClassicVisualizer, ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, Marquee, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, TimeDisplay, type UseSkinResult, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, skinMuseumUrl, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
+export { BitmapText, ClassicEqWindow, ClassicPlaylistWindow, ClassicVisualizer, ClassicWinampPlayer, type DeckTheme, EQ_BANDS, EQ_MAX_DB, Marquee, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, THEMES, type ThemePack, TimeDisplay, type UseSkinResult, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, skinMuseumUrl, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
