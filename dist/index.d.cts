@@ -168,14 +168,15 @@ declare function Slider({ background, thumb, thumbActive, value, onChange, track
 
 /**
  * Classic Winamp main window rendered from a `.wsz` skin and driven by the
- * surrounding {@link PlayerProvider}. Transport buttons show their pressed
- * sprite and control playback; the position and volume sliders track and set
- * the engine. The time display, song-title marquee, and spectrum visualizer
- * read live engine state. Must be rendered inside a `<PlayerProvider>`.
+ * surrounding {@link PlayerProvider}. Transport, sliders, time, marquee, and
+ * spectrum read/drive live engine state. Supports window-shade (collapsed) and
+ * double-size modes, persisted to localStorage under `storageKey`.
+ * Must be rendered inside a `<PlayerProvider>`.
  */
-declare function ClassicWinampPlayer({ skinUrl, scale, }: {
+declare function ClassicWinampPlayer({ skinUrl, scale, storageKey, }: {
     skinUrl: string;
     scale?: number;
+    storageKey?: string;
 }): react.JSX.Element;
 
 /**

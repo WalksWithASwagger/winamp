@@ -73,12 +73,13 @@ export function ClassicSkinDemo() {
   return (
     <div style={{ marginTop: "2rem" }}>
       <h2 style={{ fontSize: "0.95rem", margin: "0 0 0.5rem" }}>
-        Classic skin — main + EQ + playlist (Ph6)
+        Classic skin — main + EQ + playlist (Ph7)
       </h2>
       <p style={{ margin: "0 0 0.75rem", color: "#8c819b", fontSize: "0.8rem" }}>
         Real <code>.wsz</code> via <code>ClassicWinampPlayer</code> +{" "}
         <code>ClassicEqWindow</code> + <code>ClassicPlaylistWindow</code> — one
-        shared <code>PlayerProvider</code>. Click a playlist row to play it.
+        shared <code>PlayerProvider</code>. Click a playlist row to play; click
+        the windowshade button to collapse; double-click the title bar for 2×.
       </p>
       <PlayerProvider tracks={tracks}>
         <CueOnMount id="demo" />

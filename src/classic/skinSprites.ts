@@ -42,6 +42,10 @@ export const SKIN_SPRITES: Record<string, SpriteDef[]> = {
     { name: "MAIN_MINIMIZE_BUTTON_DEPRESSED", x: 9, y: 9, width: 9, height: 9 },
     { name: "MAIN_CLOSE_BUTTON", x: 18, y: 0, width: 9, height: 9 },
     { name: "MAIN_CLOSE_BUTTON_DEPRESSED", x: 18, y: 9, width: 9, height: 9 },
+    { name: "MAIN_SHADE_BUTTON", x: 0, y: 18, width: 9, height: 9 },
+    { name: "MAIN_SHADE_BUTTON_DEPRESSED", x: 9, y: 18, width: 9, height: 9 },
+    { name: "MAIN_SHADE_BACKGROUND", x: 27, y: 42, width: 275, height: 14 },
+    { name: "MAIN_SHADE_BACKGROUND_SELECTED", x: 27, y: 29, width: 275, height: 14 },
   ],
   MONOSTER: [
     { name: "MAIN_STEREO", x: 0, y: 12, width: 29, height: 12 },
