@@ -1011,7 +1011,11 @@ var SKIN_SPRITES = {
     { name: "MAIN_MINIMIZE_BUTTON", x: 9, y: 0, width: 9, height: 9 },
     { name: "MAIN_MINIMIZE_BUTTON_DEPRESSED", x: 9, y: 9, width: 9, height: 9 },
     { name: "MAIN_CLOSE_BUTTON", x: 18, y: 0, width: 9, height: 9 },
-    { name: "MAIN_CLOSE_BUTTON_DEPRESSED", x: 18, y: 9, width: 9, height: 9 }
+    { name: "MAIN_CLOSE_BUTTON_DEPRESSED", x: 18, y: 9, width: 9, height: 9 },
+    { name: "MAIN_SHADE_BUTTON", x: 0, y: 18, width: 9, height: 9 },
+    { name: "MAIN_SHADE_BUTTON_DEPRESSED", x: 9, y: 18, width: 9, height: 9 },
+    { name: "MAIN_SHADE_BACKGROUND", x: 27, y: 42, width: 275, height: 14 },
+    { name: "MAIN_SHADE_BACKGROUND_SELECTED", x: 27, y: 29, width: 275, height: 14 }
   ],
   MONOSTER: [
     { name: "MAIN_STEREO", x: 0, y: 12, width: 29, height: 12 },
@@ -1461,13 +1465,32 @@ function ClassicVisualizer({
     }
   );
 }
+function usePersistedState(key, initial) {
+  const [value, setValue] = useState(() => {
+    if (typeof window === "undefined" || !key) return initial;
+    try {
+      const stored = window.localStorage.getItem(key);
+      return stored == null ? initial : JSON.parse(stored);
+    } catch {
+      return initial;
+    }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined" || !key) return;
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+    }
+  }, [key, value]);
+  return [value, setValue];
+}
 var MAIN_WIDTH = 275;
 var MAIN_HEIGHT = 116;
+var SHADE_HEIGHT = 14;
 var STATIC = [
   ["MAIN_TITLE_BAR_SELECTED", 0, 0],
   ["MAIN_OPTIONS_BUTTON", 6, 3],
   ["MAIN_MINIMIZE_BUTTON", 244, 3],
-  ["MAIN_CLOSE_BUTTON", 264, 3],
   ["MAIN_MONO", 212, 41],
   ["MAIN_STEREO", 239, 41],
   ["MAIN_EQ_BUTTON", 219, 58],
@@ -1481,9 +1504,14 @@ var placed = (left, top) => ({
   left,
   top
 });
+var fmtTime = (s) => {
+  const t = Math.max(0, Math.floor(s));
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
+};
 function ClassicWinampPlayer({
   skinUrl,
-  scale = 1
+  scale = 1,
+  storageKey = "classicWinamp"
 }) {
   const { skin, status } = useSkin(skinUrl);
   const {
@@ -1500,6 +1528,11 @@ function ClassicWinampPlayer({
     seek,
     setVolume
   } = usePlayer();
+  const [shade, setShade] = usePersistedState(`${storageKey}:shade`, false);
+  const [doubleSize, setDoubleSize] = usePersistedState(
+    `${storageKey}:doubleSize`,
+    false
+  );
   const current = currentId ? allTracks.find((t) => t.id === currentId) : null;
   const title = current ? `${current.number}. ${current.title} - ${current.person}` : "WINAMP";
   const play = () => {
@@ -1513,23 +1546,52 @@ function ClassicWinampPlayer({
     seek(0);
   };
   const position = duration > 0 ? time / duration : 0;
+  const s = scale * (doubleSize ? 2 : 1);
+  const height = shade ? SHADE_HEIGHT : MAIN_HEIGHT;
+  const shadeButton = /* @__PURE__ */ jsx(
+    SpriteButton,
+    {
+      up: "MAIN_SHADE_BUTTON",
+      down: "MAIN_SHADE_BUTTON_DEPRESSED",
+      onClick: () => setShade(!shade),
+      title: shade ? "Restore" : "Windowshade",
+      style: placed(254, 3)
+    }
+  );
+  const closeBtn = /* @__PURE__ */ jsx(Sprite, { name: "MAIN_CLOSE_BUTTON", style: placed(264, 3) });
+  const dblToggle = /* @__PURE__ */ jsx(
+    "div",
+    {
+      onDoubleClick: () => setDoubleSize(!doubleSize),
+      title: "Double-click to toggle double size",
+      style: { position: "absolute", left: 30, top: 0, width: 210, height: 14, cursor: "pointer" }
+    }
+  );
   return /* @__PURE__ */ jsx(SkinProvider, { skin, children: /* @__PURE__ */ jsx(
     "div",
     {
       "data-skin-status": status,
-      style: { width: MAIN_WIDTH * scale, height: MAIN_HEIGHT * scale },
-      children: /* @__PURE__ */ jsxs(
+      "data-shade": shade ? "true" : "false",
+      style: { width: MAIN_WIDTH * s, height: height * s },
+      children: /* @__PURE__ */ jsx(
         "div",
         {
           style: {
             position: "relative",
             width: MAIN_WIDTH,
-            height: MAIN_HEIGHT,
-            transform: scale === 1 ? void 0 : `scale(${scale})`,
+            height,
+            transform: s === 1 ? void 0 : `scale(${s})`,
             transformOrigin: "top left",
             imageRendering: "pixelated"
           },
-          children: [
+          children: shade ? /* @__PURE__ */ jsxs(Fragment, { children: [
+            /* @__PURE__ */ jsx(Sprite, { name: "MAIN_SHADE_BACKGROUND_SELECTED", style: placed(0, 0) }),
+            /* @__PURE__ */ jsx(Sprite, { name: "MAIN_OPTIONS_BUTTON", style: placed(6, 3) }),
+            /* @__PURE__ */ jsx("div", { style: { position: "absolute", left: 130, top: 4 }, children: /* @__PURE__ */ jsx(BitmapText, { text: fmtTime(time) }) }),
+            dblToggle,
+            shadeButton,
+            closeBtn
+          ] }) : /* @__PURE__ */ jsxs(Fragment, { children: [
             /* @__PURE__ */ jsx(Sprite, { name: "MAIN_WINDOW_BACKGROUND", style: placed(0, 0) }),
             STATIC.map(([name, left, top]) => /* @__PURE__ */ jsx(Sprite, { name, style: placed(left, top) }, name)),
             /* @__PURE__ */ jsx(
@@ -1542,6 +1604,9 @@ function ClassicWinampPlayer({
             /* @__PURE__ */ jsx(ClassicVisualizer, { analyser }),
             /* @__PURE__ */ jsx(TimeDisplay, { seconds: time }),
             /* @__PURE__ */ jsx(Marquee, { text: title }),
+            dblToggle,
+            shadeButton,
+            closeBtn,
             /* @__PURE__ */ jsx(
               Slider,
               {
@@ -1575,7 +1640,7 @@ function ClassicWinampPlayer({
             /* @__PURE__ */ jsx(SpriteButton, { up: "MAIN_PAUSE_BUTTON", down: "MAIN_PAUSE_BUTTON_ACTIVE", onClick: pause, title: "Pause", style: placed(62, 88) }),
             /* @__PURE__ */ jsx(SpriteButton, { up: "MAIN_STOP_BUTTON", down: "MAIN_STOP_BUTTON_ACTIVE", onClick: stop, title: "Stop", style: placed(85, 88) }),
             /* @__PURE__ */ jsx(SpriteButton, { up: "MAIN_NEXT_BUTTON", down: "MAIN_NEXT_BUTTON_ACTIVE", onClick: next, title: "Next", style: placed(108, 88) })
-          ]
+          ] })
         }
       )
     }

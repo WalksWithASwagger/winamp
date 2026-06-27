@@ -64,3 +64,20 @@ class StubAudioContext {
 HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
 HTMLMediaElement.prototype.pause = vi.fn();
 HTMLMediaElement.prototype.load = vi.fn();
+
+// A reliable in-memory localStorage (jsdom's isn't available under this runner).
+const store = new Map<string, string>();
+const memoryStorage = {
+  getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+  setItem: (k: string, v: string) => void store.set(k, String(v)),
+  removeItem: (k: string) => void store.delete(k),
+  clear: () => store.clear(),
+  key: (i: number) => [...store.keys()][i] ?? null,
+  get length() {
+    return store.size;
+  },
+};
+Object.defineProperty(window, "localStorage", {
+  value: memoryStorage,
+  configurable: true,
+});

@@ -1,8 +1,8 @@
-import { render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ClassicWinampPlayer, PlayerProvider } from "../src";
 
-const renderWindow = (props: { skinUrl: string; scale?: number }) =>
+const renderWindow = (props: { skinUrl: string; scale?: number; storageKey?: string }) =>
   render(
     <PlayerProvider tracks={[]}>
       <ClassicWinampPlayer {...props} />
@@ -13,12 +13,13 @@ const renderWindow = (props: { skinUrl: string; scale?: number }) =>
 // structure without network. (Sprite rendering itself is browser-verified.)
 beforeEach(() => {
   globalThis.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch;
+  window.localStorage.clear();
 });
 afterEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("ClassicWinampPlayer (static window)", () => {
+describe("ClassicWinampPlayer", () => {
   it("renders the 275×116 window with chrome, transport, sliders, and readouts", () => {
     const { container } = renderWindow({ skinUrl: "http://example.test/skin.wsz" });
     const win = container.querySelector("[data-skin-status]") as HTMLElement;
@@ -27,8 +28,8 @@ describe("ClassicWinampPlayer (static window)", () => {
     const inner = win.firstElementChild as HTMLElement;
     expect(inner.style.width).toBe("275px");
     expect(inner.style.height).toBe("116px");
-    // Five transport buttons and the spectrum canvas (Ph4 readout).
-    expect(inner.querySelectorAll("button").length).toBe(5);
+    // Five transport buttons + the windowshade button; plus the spectrum canvas.
+    expect(inner.querySelectorAll("button").length).toBe(6);
     expect(inner.querySelector("canvas")).toBeTruthy();
   });
 
@@ -37,5 +38,26 @@ describe("ClassicWinampPlayer (static window)", () => {
     const win = container.querySelector("[data-skin-status]") as HTMLElement;
     expect(win.style.width).toBe("550px");
     expect((win.firstElementChild as HTMLElement).style.transform).toBe("scale(2)");
+  });
+
+  it("collapses to a 14px shade bar when the windowshade button is clicked", () => {
+    const { container } = renderWindow({ skinUrl: "http://example.test/skin.wsz" });
+    const win = () => container.querySelector("[data-skin-status]") as HTMLElement;
+    expect(win().dataset.shade).toBe("false");
+    const shadeBtn = container.querySelector('button[title="Windowshade"]') as HTMLElement;
+    act(() => shadeBtn.click());
+    expect(win().dataset.shade).toBe("true");
+    expect((win().firstElementChild as HTMLElement).style.height).toBe("14px");
+  });
+
+  it("toggles double-size on title-bar double-click (persisted)", () => {
+    const { container } = renderWindow({ skinUrl: "http://example.test/skin.wsz" });
+    const win = () => container.querySelector("[data-skin-status]") as HTMLElement;
+    const toggle = container.querySelector(
+      '[title="Double-click to toggle double size"]',
+    ) as HTMLElement;
+    fireEvent.doubleClick(toggle);
+    expect(win().style.width).toBe("550px");
+    expect(window.localStorage.getItem("classicWinamp:doubleSize")).toBe("true");
   });
 });
