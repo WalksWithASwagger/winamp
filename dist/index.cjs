@@ -1079,6 +1079,16 @@ var SKIN_SPRITES = {
     { name: "EQ_AUTO_BUTTON_SELECTED", x: 95, y: 119, width: 32, height: 12 },
     { name: "EQ_PRESETS_BUTTON", x: 224, y: 164, width: 44, height: 12 },
     { name: "EQ_PRESETS_BUTTON_SELECTED", x: 224, y: 176, width: 44, height: 12 }
+  ],
+  PLEDIT: [
+    { name: "PLAYLIST_TOP_LEFT_SELECTED", x: 0, y: 0, width: 25, height: 20 },
+    { name: "PLAYLIST_TITLE_BAR_SELECTED", x: 26, y: 0, width: 100, height: 20 },
+    { name: "PLAYLIST_TOP_TILE_SELECTED", x: 127, y: 0, width: 25, height: 20 },
+    { name: "PLAYLIST_TOP_RIGHT_CORNER_SELECTED", x: 153, y: 0, width: 25, height: 20 },
+    { name: "PLAYLIST_LEFT_TILE", x: 0, y: 42, width: 12, height: 29 },
+    { name: "PLAYLIST_RIGHT_TILE", x: 31, y: 42, width: 20, height: 29 },
+    { name: "PLAYLIST_BOTTOM_LEFT_CORNER", x: 0, y: 72, width: 125, height: 38 },
+    { name: "PLAYLIST_BOTTOM_RIGHT_CORNER", x: 126, y: 72, width: 150, height: 38 }
   ]
 };
 var SPRITE_DIMS = Object.fromEntries(
@@ -1678,9 +1688,124 @@ function ClassicEqWindow({
     }
   ) }) });
 }
+var W2 = 275;
+var H2 = 116;
+var TOP_H = 20;
+var BOTTOM_H = 38;
+var LEFT_W = 12;
+var RIGHT_W = 20;
+var TITLE_W = 100;
+function Tile({
+  name,
+  left,
+  top,
+  width,
+  height,
+  repeat = "repeat"
+}) {
+  const skin = useSkinContext();
+  const uri = skin?.sprites[name];
+  return /* @__PURE__ */ jsxRuntime.jsx(
+    "div",
+    {
+      style: {
+        position: "absolute",
+        left,
+        top,
+        width,
+        height,
+        backgroundImage: uri ? `url(${uri})` : void 0,
+        backgroundRepeat: repeat,
+        imageRendering: "pixelated"
+      }
+    }
+  );
+}
+function ClassicPlaylistWindow({
+  skinUrl,
+  scale = 1
+}) {
+  const { skin, status } = useSkin(skinUrl);
+  const { allTracks, currentId, playTrack } = usePlayer();
+  const colors = skin?.colors;
+  const normal = colors?.playlistNormal ?? "#00ff00";
+  const current = colors?.playlistCurrent ?? "#ffffff";
+  const bg = colors?.playlistNormalBackground ?? "#000000";
+  const selectedBg = colors?.playlistSelectedBackground ?? "#0000c6";
+  const titleLeft = Math.round((W2 - TITLE_W) / 2);
+  return /* @__PURE__ */ jsxRuntime.jsx(SkinProvider, { skin, children: /* @__PURE__ */ jsxRuntime.jsx("div", { "data-pl-status": status, style: { width: W2 * scale, height: H2 * scale }, children: /* @__PURE__ */ jsxRuntime.jsxs(
+    "div",
+    {
+      style: {
+        position: "relative",
+        width: W2,
+        height: H2,
+        transform: scale === 1 ? void 0 : `scale(${scale})`,
+        transformOrigin: "top left",
+        imageRendering: "pixelated"
+      },
+      children: [
+        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_TOP_TILE_SELECTED", left: 0, top: 0, width: W2, height: TOP_H, repeat: "repeat-x" }),
+        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_TOP_LEFT_SELECTED", left: 0, top: 0, width: 25, height: TOP_H, repeat: "no-repeat" }),
+        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_TITLE_BAR_SELECTED", left: titleLeft, top: 0, width: TITLE_W, height: TOP_H, repeat: "no-repeat" }),
+        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_TOP_RIGHT_CORNER_SELECTED", left: W2 - 25, top: 0, width: 25, height: TOP_H, repeat: "no-repeat" }),
+        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_LEFT_TILE", left: 0, top: TOP_H, width: LEFT_W, height: H2 - TOP_H - BOTTOM_H, repeat: "repeat-y" }),
+        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_RIGHT_TILE", left: W2 - RIGHT_W, top: TOP_H, width: RIGHT_W, height: H2 - TOP_H - BOTTOM_H, repeat: "repeat-y" }),
+        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_BOTTOM_LEFT_CORNER", left: 0, top: H2 - BOTTOM_H, width: 125, height: BOTTOM_H, repeat: "no-repeat" }),
+        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_BOTTOM_RIGHT_CORNER", left: 125, top: H2 - BOTTOM_H, width: 150, height: BOTTOM_H, repeat: "no-repeat" }),
+        /* @__PURE__ */ jsxRuntime.jsx(
+          "div",
+          {
+            style: {
+              position: "absolute",
+              left: LEFT_W,
+              top: TOP_H,
+              width: W2 - LEFT_W - RIGHT_W,
+              height: H2 - TOP_H - BOTTOM_H,
+              background: bg,
+              overflowY: "auto",
+              font: "9px ui-monospace, monospace",
+              lineHeight: "10px",
+              whiteSpace: "nowrap"
+            },
+            children: allTracks.map((t) => {
+              const isCurrent = t.id === currentId;
+              const playable = !!t.audioUrl;
+              return /* @__PURE__ */ jsxRuntime.jsxs(
+                "div",
+                {
+                  onClick: () => playable && playTrack(t.id),
+                  title: `${t.title} - ${t.person}`,
+                  style: {
+                    padding: "0 3px",
+                    color: isCurrent ? current : normal,
+                    background: isCurrent ? selectedBg : void 0,
+                    opacity: playable ? 1 : 0.5,
+                    cursor: playable ? "pointer" : "default",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis"
+                  },
+                  children: [
+                    t.number,
+                    ". ",
+                    t.title,
+                    " - ",
+                    t.person
+                  ]
+                },
+                t.id
+              );
+            })
+          }
+        )
+      ]
+    }
+  ) }) });
+}
 
 exports.BitmapText = BitmapText;
 exports.ClassicEqWindow = ClassicEqWindow;
+exports.ClassicPlaylistWindow = ClassicPlaylistWindow;
 exports.ClassicVisualizer = ClassicVisualizer;
 exports.ClassicWinampPlayer = ClassicWinampPlayer;
 exports.EQ_BANDS = EQ_BANDS;
