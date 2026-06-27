@@ -28,8 +28,8 @@ describe("ClassicWinampPlayer", () => {
     const inner = win.firstElementChild as HTMLElement;
     expect(inner.style.width).toBe("275px");
     expect(inner.style.height).toBe("116px");
-    // Five transport buttons + the windowshade button; plus the spectrum canvas.
-    expect(inner.querySelectorAll("button").length).toBe(6);
+    // 5 transport + shade + shuffle + repeat buttons; plus the spectrum canvas.
+    expect(inner.querySelectorAll("button").length).toBe(8);
     expect(inner.querySelector("canvas")).toBeTruthy();
   });
 

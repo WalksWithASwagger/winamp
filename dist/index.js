@@ -23,6 +23,7 @@ function PlayerProvider({
   const analyserRef = useRef(null);
   const eqRef = useRef([]);
   const preampRef = useRef(null);
+  const pannerRef = useRef(null);
   const [currentId, setCurrentId] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
@@ -32,9 +33,15 @@ function PlayerProvider({
   const [eqGains, setEqGainsState] = useState(() => EQ_BANDS.map(() => 0));
   const [eqEnabled, setEqEnabledState] = useState(true);
   const [preamp, setPreampState] = useState(0);
+  const [balance, setBalanceState] = useState(0);
+  const [shuffle, setShuffleState] = useState(false);
+  const [repeat, setRepeatState] = useState(false);
   const eqGainsRef = useRef(EQ_BANDS.map(() => 0));
   const eqEnabledRef = useRef(true);
   const preampRefDb = useRef(0);
+  const balanceRefV = useRef(0);
+  const shuffleRef = useRef(false);
+  const repeatRef = useRef(false);
   const dbToGain = (db) => 10 ** (db / 20);
   const playable = useMemo(() => tracks.filter((t) => t.audioUrl), [tracks]);
   const current = currentId ? tracks.find((t) => t.id === currentId) ?? null : null;
@@ -64,7 +71,15 @@ function PlayerProvider({
       return f;
     }, preampNode);
     tail.connect(an);
-    an.connect(ac.destination);
+    if (typeof ac.createStereoPanner === "function") {
+      const panner = ac.createStereoPanner();
+      panner.pan.value = balanceRefV.current;
+      an.connect(panner);
+      panner.connect(ac.destination);
+      pannerRef.current = panner;
+    } else {
+      an.connect(ac.destination);
+    }
     ctxRef.current = ac;
     srcRef.current = src;
     analyserRef.current = an;
@@ -106,6 +121,20 @@ function PlayerProvider({
     preampRefDb.current = clamped;
     setPreampState(clamped);
     if (preampRef.current) preampRef.current.gain.value = dbToGain(clamped);
+  }, []);
+  const setBalance = useCallback((v) => {
+    const clamped = Math.min(1, Math.max(-1, v));
+    balanceRefV.current = clamped;
+    setBalanceState(clamped);
+    if (pannerRef.current) pannerRef.current.pan.value = clamped;
+  }, []);
+  const setShuffle = useCallback((on) => {
+    shuffleRef.current = on;
+    setShuffleState(on);
+  }, []);
+  const setRepeat = useCallback((on) => {
+    repeatRef.current = on;
+    setRepeatState(on);
   }, []);
   const driveScene = useCallback(
     (t) => {
@@ -160,7 +189,14 @@ function PlayerProvider({
     (dir) => {
       if (playable.length === 0) return;
       const i = playable.findIndex((t) => t.id === currentId);
-      const nextIndex = i === -1 ? dir === 1 ? 0 : playable.length - 1 : (i + dir + playable.length) % playable.length;
+      let nextIndex;
+      if (shuffleRef.current && playable.length > 1) {
+        do {
+          nextIndex = Math.floor(Math.random() * playable.length);
+        } while (nextIndex === i);
+      } else {
+        nextIndex = i === -1 ? dir === 1 ? 0 : playable.length - 1 : (i + dir + playable.length) % playable.length;
+      }
       playTrack(playable[nextIndex].id);
     },
     [playable, currentId, playTrack]
@@ -185,7 +221,14 @@ function PlayerProvider({
     const onDur = () => setDuration(Number.isFinite(el.duration) ? el.duration : 0);
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
-    const onEnded = () => step(1);
+    const onEnded = () => {
+      if (repeatRef.current) {
+        el.currentTime = 0;
+        void el.play();
+      } else {
+        step(1);
+      }
+    };
     el.addEventListener("timeupdate", onTime);
     el.addEventListener("durationchange", onDur);
     el.addEventListener("play", onPlay);
@@ -212,10 +255,16 @@ function PlayerProvider({
       eqGains,
       eqEnabled,
       preamp,
+      balance,
+      shuffle,
+      repeat,
       setEqGain,
       setEqGains,
       setEqEnabled,
       setPreamp,
+      setBalance,
+      setShuffle,
+      setRepeat,
       cue,
       playTrack,
       toggle,
@@ -236,10 +285,16 @@ function PlayerProvider({
       eqGains,
       eqEnabled,
       preamp,
+      balance,
+      shuffle,
+      repeat,
       setEqGain,
       setEqGains,
       setEqEnabled,
       setPreamp,
+      setBalance,
+      setShuffle,
+      setRepeat,
       cue,
       playTrack,
       toggle,
@@ -1495,8 +1550,6 @@ var STATIC = [
   ["MAIN_STEREO", 239, 41],
   ["MAIN_EQ_BUTTON", 219, 58],
   ["MAIN_PLAYLIST_BUTTON", 242, 58],
-  ["MAIN_SHUFFLE_BUTTON", 164, 89],
-  ["MAIN_REPEAT_BUTTON", 210, 89],
   ["MAIN_EJECT_BUTTON", 136, 89]
 ];
 var placed = (left, top) => ({
@@ -1522,11 +1575,17 @@ function ClassicWinampPlayer({
     analyser,
     allTracks,
     currentId,
+    balance,
+    shuffle,
+    repeat,
     toggle,
     prev,
     next,
     seek,
-    setVolume
+    setVolume,
+    setBalance,
+    setShuffle,
+    setRepeat
   } = usePlayer();
   const [shade, setShade] = usePersistedState(`${storageKey}:shade`, false);
   const [doubleSize, setDoubleSize] = usePersistedState(
@@ -1633,6 +1692,38 @@ function ClassicWinampPlayer({
                 frames: 28,
                 frameHeight: 15,
                 style: placed(107, 57)
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              Slider,
+              {
+                thumb: "MAIN_BALANCE_THUMB",
+                thumbActive: "MAIN_BALANCE_THUMB_ACTIVE",
+                value: (balance + 1) / 2,
+                onChange: (v) => setBalance(v * 2 - 1),
+                trackWidth: 38,
+                trackHeight: 13,
+                style: placed(177, 57)
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              SpriteButton,
+              {
+                up: shuffle ? "MAIN_SHUFFLE_BUTTON_SELECTED" : "MAIN_SHUFFLE_BUTTON",
+                down: shuffle ? "MAIN_SHUFFLE_BUTTON" : "MAIN_SHUFFLE_BUTTON_SELECTED",
+                onClick: () => setShuffle(!shuffle),
+                title: shuffle ? "Shuffle on" : "Shuffle off",
+                style: placed(164, 89)
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              SpriteButton,
+              {
+                up: repeat ? "MAIN_REPEAT_BUTTON_SELECTED" : "MAIN_REPEAT_BUTTON",
+                down: repeat ? "MAIN_REPEAT_BUTTON" : "MAIN_REPEAT_BUTTON_SELECTED",
+                onClick: () => setRepeat(!repeat),
+                title: repeat ? "Repeat on" : "Repeat off",
+                style: placed(210, 89)
               }
             ),
             /* @__PURE__ */ jsx(SpriteButton, { up: "MAIN_PREVIOUS_BUTTON", down: "MAIN_PREVIOUS_BUTTON_ACTIVE", onClick: prev, title: "Previous", style: placed(16, 88) }),
@@ -1866,6 +1957,12 @@ function ClassicPlaylistWindow({
   ) }) });
 }
 
-export { BitmapText, ClassicEqWindow, ClassicPlaylistWindow, ClassicVisualizer, ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, Marquee, PlayerProvider, SKIN_SPRITES, SPRITE_DIMS, SkinProvider, Slider, Sprite, SpriteButton, TimeDisplay, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
+// src/classic/skinMuseum.ts
+var MUSEUM_CDN = "https://r2.webampskins.org/skins";
+function skinMuseumUrl(md5) {
+  return `${MUSEUM_CDN}/${md5}.wsz`;
+}
+
+export { BitmapText, ClassicEqWindow, ClassicPlaylistWindow, ClassicVisualizer, ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, Marquee, PlayerProvider, SKIN_SPRITES, SPRITE_DIMS, SkinProvider, Slider, Sprite, SpriteButton, TimeDisplay, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, skinMuseumUrl, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

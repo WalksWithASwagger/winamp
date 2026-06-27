@@ -28,10 +28,16 @@ type PlayerValue = {
   eqGains: number[];
   eqEnabled: boolean;
   preamp: number;
+  balance: number;
+  shuffle: boolean;
+  repeat: boolean;
   setEqGain: (band: number, db: number) => void;
   setEqGains: (gains: number[]) => void;
   setEqEnabled: (on: boolean) => void;
   setPreamp: (db: number) => void;
+  setBalance: (v: number) => void;
+  setShuffle: (on: boolean) => void;
+  setRepeat: (on: boolean) => void;
   cue: (id: string) => void;
   playTrack: (id: string) => void;
   toggle: () => void;
@@ -66,6 +72,7 @@ export function PlayerProvider({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const eqRef = useRef<BiquadFilterNode[]>([]);
   const preampRef = useRef<GainNode | null>(null);
+  const pannerRef = useRef<StereoPannerNode | null>(null);
 
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -76,11 +83,17 @@ export function PlayerProvider({
   const [eqGains, setEqGainsState] = useState<number[]>(() => EQ_BANDS.map(() => 0));
   const [eqEnabled, setEqEnabledState] = useState(true);
   const [preamp, setPreampState] = useState(0);
-  // Mirrors of EQ state, updated only inside the setters (never during render)
-  // so the lazily-built graph picks up values set before any audio existed.
+  const [balance, setBalanceState] = useState(0);
+  const [shuffle, setShuffleState] = useState(false);
+  const [repeat, setRepeatState] = useState(false);
+  // Mirrors of state, updated only inside the setters (never during render) so
+  // the lazily-built graph + event handlers pick up values without stale closures.
   const eqGainsRef = useRef<number[]>(EQ_BANDS.map(() => 0));
   const eqEnabledRef = useRef(true);
   const preampRefDb = useRef(0);
+  const balanceRefV = useRef(0);
+  const shuffleRef = useRef(false);
+  const repeatRef = useRef(false);
 
   // Linear gain a peaking filter (or preamp) should apply for a dB value.
   const dbToGain = (db: number) => 10 ** (db / 20);
@@ -126,7 +139,16 @@ export function PlayerProvider({
       return f;
     }, preampNode);
     tail.connect(an);
-    an.connect(ac.destination);
+    // Optional stereo balance after the analyser; not all engines have it.
+    if (typeof ac.createStereoPanner === "function") {
+      const panner = ac.createStereoPanner();
+      panner.pan.value = balanceRefV.current;
+      an.connect(panner);
+      panner.connect(ac.destination);
+      pannerRef.current = panner;
+    } else {
+      an.connect(ac.destination);
+    }
 
     ctxRef.current = ac;
     srcRef.current = src;
@@ -174,6 +196,23 @@ export function PlayerProvider({
     preampRefDb.current = clamped;
     setPreampState(clamped);
     if (preampRef.current) preampRef.current.gain.value = dbToGain(clamped);
+  }, []);
+
+  const setBalance = useCallback((v: number) => {
+    const clamped = Math.min(1, Math.max(-1, v));
+    balanceRefV.current = clamped;
+    setBalanceState(clamped);
+    if (pannerRef.current) pannerRef.current.pan.value = clamped;
+  }, []);
+
+  const setShuffle = useCallback((on: boolean) => {
+    shuffleRef.current = on;
+    setShuffleState(on);
+  }, []);
+
+  const setRepeat = useCallback((on: boolean) => {
+    repeatRef.current = on;
+    setRepeatState(on);
   }, []);
 
   const driveScene = useCallback(
@@ -235,12 +274,20 @@ export function PlayerProvider({
     (dir: 1 | -1) => {
       if (playable.length === 0) return;
       const i = playable.findIndex((t) => t.id === currentId);
-      const nextIndex =
-        i === -1
-          ? dir === 1
-            ? 0
-            : playable.length - 1
-          : (i + dir + playable.length) % playable.length;
+      let nextIndex: number;
+      if (shuffleRef.current && playable.length > 1) {
+        // Random track other than the current one.
+        do {
+          nextIndex = Math.floor(Math.random() * playable.length);
+        } while (nextIndex === i);
+      } else {
+        nextIndex =
+          i === -1
+            ? dir === 1
+              ? 0
+              : playable.length - 1
+            : (i + dir + playable.length) % playable.length;
+      }
       playTrack(playable[nextIndex].id);
     },
     [playable, currentId, playTrack],
@@ -270,7 +317,14 @@ export function PlayerProvider({
     const onDur = () => setDuration(Number.isFinite(el.duration) ? el.duration : 0);
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
-    const onEnded = () => step(1);
+    const onEnded = () => {
+      if (repeatRef.current) {
+        el.currentTime = 0;
+        void el.play();
+      } else {
+        step(1);
+      }
+    };
     el.addEventListener("timeupdate", onTime);
     el.addEventListener("durationchange", onDur);
     el.addEventListener("play", onPlay);
@@ -299,10 +353,16 @@ export function PlayerProvider({
       eqGains,
       eqEnabled,
       preamp,
+      balance,
+      shuffle,
+      repeat,
       setEqGain,
       setEqGains,
       setEqEnabled,
       setPreamp,
+      setBalance,
+      setShuffle,
+      setRepeat,
       cue,
       playTrack,
       toggle,
@@ -323,10 +383,16 @@ export function PlayerProvider({
       eqGains,
       eqEnabled,
       preamp,
+      balance,
+      shuffle,
+      repeat,
       setEqGain,
       setEqGains,
       setEqEnabled,
       setPreamp,
+      setBalance,
+      setShuffle,
+      setRepeat,
       cue,
       playTrack,
       toggle,

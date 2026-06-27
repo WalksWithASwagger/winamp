@@ -34,10 +34,16 @@ type PlayerValue = {
     eqGains: number[];
     eqEnabled: boolean;
     preamp: number;
+    balance: number;
+    shuffle: boolean;
+    repeat: boolean;
     setEqGain: (band: number, db: number) => void;
     setEqGains: (gains: number[]) => void;
     setEqEnabled: (on: boolean) => void;
     setPreamp: (db: number) => void;
+    setBalance: (v: number) => void;
+    setShuffle: (on: boolean) => void;
+    setRepeat: (on: boolean) => void;
     cue: (id: string) => void;
     playTrack: (id: string) => void;
     toggle: () => void;
@@ -201,6 +207,9 @@ declare function ClassicPlaylistWindow({ skinUrl, scale, }: {
     scale?: number;
 }): react.JSX.Element;
 
+/** URL of a Skin Museum `.wsz` by its MD5 hash. */
+declare function skinMuseumUrl(md5: string): string;
+
 /** Elapsed time as four NUMBERS sprite digits (m m : s s). */
 declare function TimeDisplay({ seconds }: {
     seconds: number;
@@ -234,4 +243,4 @@ declare function ClassicVisualizer({ analyser, left, top, }: {
 /** Resolve any character to its glyph sprite name (uppercase-folded). */
 declare const glyphFor: (ch: string) => string | undefined;
 
-export { BitmapText, ClassicEqWindow, ClassicPlaylistWindow, ClassicVisualizer, ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, Marquee, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, TimeDisplay, type UseSkinResult, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
+export { BitmapText, ClassicEqWindow, ClassicPlaylistWindow, ClassicVisualizer, ClassicWinampPlayer, EQ_BANDS, EQ_MAX_DB, Marquee, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, TimeDisplay, type UseSkinResult, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, skinMuseumUrl, usePlayer, usePrefersReducedMotion, useSkin, useSkinContext };
