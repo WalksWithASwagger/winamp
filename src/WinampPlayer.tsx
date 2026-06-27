@@ -16,6 +16,7 @@ import {
 import { EQ_BANDS, usePlayer } from "./PlayerProvider";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 import { Visualizer } from "./Visualizer";
+import { THEMES, type DeckTheme } from "./themes";
 
 // Graphic-EQ presets — 10 gains (dB) aligned to EQ_BANDS. Flat = passthrough.
 const EQ_PRESETS: Record<string, number[]> = {
@@ -23,6 +24,10 @@ const EQ_PRESETS: Record<string, number[]> = {
   Rock: [5, 4, 2, 0, -1, 0, 2, 4, 4, 5],
   Vocal: [-2, -1, 1, 3, 4, 4, 3, 1, 0, -1],
   Bass: [6, 5, 4, 2, 0, 0, 0, 0, 0, 0],
+  Treble: [-2, -2, -1, 0, 1, 3, 5, 6, 6, 6],
+  Classical: [4, 3, 2, 1, -1, -1, 0, 2, 3, 4],
+  Dance: [6, 5, 2, 0, 0, -2, -3, -3, 0, 0],
+  Loudness: [6, 4, 0, 0, -2, 0, -1, -4, 5, 1],
 };
 
 function eqBandLabel(hz: number): string {
@@ -94,13 +99,18 @@ export function WinampPlayer({
   storageKey = "deckState",
   wordmarkSrc = "/ethos-art/ethos-mask-cream.png",
   wordmarkText = "ETHọ́S·FM",
-  spectrumColors = DEFAULT_SPECTRUM_COLORS,
+  spectrumColors,
+  theme,
 }: {
   storageKey?: string;
   wordmarkSrc?: string;
   wordmarkText?: string;
   spectrumColors?: string[];
+  /** Named theme pack for the modern deck (distinct from .wsz classic skins). */
+  theme?: DeckTheme;
 } = {}) {
+  const themePack = theme ? THEMES[theme] : undefined;
+  const spectrum = spectrumColors ?? themePack?.spectrum ?? DEFAULT_SPECTRUM_COLORS;
   const {
     allTracks,
     currentId,
@@ -127,6 +137,7 @@ export function WinampPlayer({
   const [copied, setCopied] = useState(false);
   const [shaded, setShaded] = useState(false);
   const [doubled, setDoubled] = useState(false);
+  const [eqPreset, setEqPreset] = useState<string | null>(null);
   const [vizOpen, setVizOpen] = useState(false);
   const [canViz, setCanViz] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -158,6 +169,7 @@ export function WinampPlayer({
         if (typeof s.y === "number") y.set(s.y);
         if (typeof s.doubled === "boolean") setDoubled(s.doubled);
         if (Array.isArray(s.eq)) setEqGains(s.eq);
+        if (typeof s.eqPreset === "string") setEqPreset(s.eqPreset);
       } catch {
         /* ignore */
       }
@@ -314,7 +326,10 @@ export function WinampPlayer({
             y: isMobile ? 0 : y,
             scale: doubled && !isMobile ? 2 : 1,
             transformOrigin: "100% 0%",
-            "--deck-accent": current?.art.palette[0] ?? "#f47a52",
+            ...themePack?.vars,
+            // Per-track palette tints over the theme; theme accent is the fallback.
+            "--deck-accent":
+              current?.art.palette[0] ?? themePack?.vars["--deck-accent"] ?? "#f47a52",
           } as MotionStyle
         }
       >
@@ -421,7 +436,7 @@ export function WinampPlayer({
                 ? `-${fmt(Math.max(0, duration - time))}`
                 : fmt(time)}
             </button>
-            <Spectrum colors={spectrumColors} />
+            <Spectrum colors={spectrum} />
             <div className="deck-marquee" aria-live="polite">
               <span className={`deck-marquee-text${marqueeRuns ? " run" : ""}`}>
                 {displayMarquee}
@@ -495,11 +510,13 @@ export function WinampPlayer({
                   <button
                     key={name}
                     type="button"
-                    className="deck-eq-preset"
+                    className={`deck-eq-preset${eqPreset === name ? " is-active" : ""}`}
+                    aria-pressed={eqPreset === name}
                     onClick={() => {
                       const gains = EQ_PRESETS[name];
                       setEqGains(gains);
-                      persist({ eq: gains });
+                      setEqPreset(name);
+                      persist({ eq: gains, eqPreset: name });
                     }}
                   >
                     {name}
@@ -522,7 +539,9 @@ export function WinampPlayer({
                           setEqGain(i, db);
                           const next = eqGains.slice();
                           next[i] = db;
-                          persist({ eq: next });
+                          // Hand-tweaking a band clears the active preset.
+                          setEqPreset(null);
+                          persist({ eq: next, eqPreset: null });
                         }}
                         aria-label={`${eqBandLabel(hz)} Hz, ${eqGains[i] ?? 0} decibels`}
                       />

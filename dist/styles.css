@@ -12,17 +12,33 @@
    ============================================================ */
 .deck {
   --deck-accent: #f47a52;
+  /* Theme tokens — override these (or set a theme via the `theme` prop) to
+     reskin the deck. Defaults reproduce the original brushed-graphite look. */
+  --wamp-text: #e8e2d4;
+  --wamp-bg-1: #34373e;
+  --wamp-bg-2: #1a1c20;
+  --wamp-bg-3: #131419;
+  --wamp-bar-1: #5a5e69;
+  --wamp-bar-2: #34373e;
+  --wamp-bar-3: #24262c;
+  --wamp-btn-1: #494d56;
+  --wamp-btn-2: #2a2d33;
+  --wamp-btn-text: #aeb2bb;
+  --wamp-key-text: #d6dae1;
+  --wamp-lcd-1: #06090a;
+  --wamp-lcd-2: #020303;
+  --wamp-edge-top: #565a64;
   position: fixed;
   top: 0.75rem; right: 0.75rem;
   z-index: 30;
   width: 232px;
   font-family: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
-  color: #e8e2d4;
+  color: var(--wamp-text);
   border-radius: 5px;
   background:
     repeating-linear-gradient(180deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 3px),
-    linear-gradient(180deg, #34373e, #1a1c20 60%, #131419);
-  border-top: 1px solid #565a64;
+    linear-gradient(180deg, var(--wamp-bg-1), var(--wamp-bg-2) 60%, var(--wamp-bg-3));
+  border-top: 1px solid var(--wamp-edge-top);
   border-left: 1px solid #3a3d44;
   border-right: 1px solid #0c0d10;
   border-bottom: 1px solid #050506;
@@ -40,7 +56,7 @@
   height: 17px; padding: 0 0.34rem;
   background:
     repeating-linear-gradient(180deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 2px),
-    linear-gradient(180deg, #5a5e69, #34373e 55%, #24262c);
+    linear-gradient(180deg, var(--wamp-bar-1), var(--wamp-bar-2) 55%, var(--wamp-bar-3));
   border-bottom: 1px solid #08090b;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.22);
 }
@@ -53,8 +69,8 @@
 .deck-bar-btns { display: flex; gap: 0.18rem; }
 .deck-winbtn {
   width: 15px; height: 12px; display: grid; place-items: center;
-  font-size: 0.56rem; line-height: 1; color: #aeb2bb;
-  background: linear-gradient(180deg, #494d56, #2a2d33);
+  font-size: 0.56rem; line-height: 1; color: var(--wamp-btn-text);
+  background: linear-gradient(180deg, var(--wamp-btn-1), var(--wamp-btn-2));
   border: 1px solid #0a0b0d; border-top-color: #5c6069; border-radius: 2px;
   cursor: pointer;
 }
@@ -64,7 +80,7 @@
 .deck-lcd {
   display: flex; align-items: center; gap: 0.34rem;
   margin: 0.3rem; padding: 0.22rem 0.34rem;
-  background: linear-gradient(180deg, #06090a, #020303);
+  background: linear-gradient(180deg, var(--wamp-lcd-1), var(--wamp-lcd-2));
   border: 1px solid #000; border-radius: 3px;
   box-shadow: inset 0 1px 4px #000, inset 0 0 0 1px rgba(109,202,208,0.06);
   overflow: hidden;
@@ -97,7 +113,7 @@
 .deck-key {
   position: relative;
   width: 22px; height: 17px; display: grid; place-items: center;
-  font-size: 0.6rem; color: #d6dae1;
+  font-size: 0.6rem; color: var(--wamp-key-text);
   background: linear-gradient(180deg, #494d56, #23262c);
   border: 1px solid #0a0b0d; border-top-color: #5c6069; border-radius: 3px;
   cursor: pointer; transition: transform 0.07s, box-shadow 0.14s, color 0.14s;
@@ -175,11 +191,16 @@
 .deck-eq-preset {
   flex: 1; padding: 0.16rem 0; font: inherit; font-size: 0.5rem; letter-spacing: 0.04em;
   color: var(--wamp-muted, #c8bdd7); cursor: pointer;
-  background: linear-gradient(180deg, #494d56, #2a2d33);
+  background: linear-gradient(180deg, var(--wamp-btn-1), var(--wamp-btn-2));
   border: 1px solid #0a0b0d; border-top-color: #5c6069; border-radius: 2px;
   transition: color 0.12s, box-shadow 0.12s;
 }
 .deck-eq-preset:hover { color: var(--deck-accent); box-shadow: 0 0 7px -1px var(--deck-accent); }
+.deck-eq-preset.is-active {
+  color: var(--deck-accent);
+  border-color: color-mix(in srgb, var(--deck-accent) 60%, #0a0b0d);
+  box-shadow: 0 0 8px -1px var(--deck-accent), inset 0 0 6px -2px var(--deck-accent);
+}
 .deck-eq-bands { display: flex; align-items: flex-end; justify-content: space-between; gap: 1px; }
 .deck-eq-band { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
 /* Vertical sliders by rotating the deck's existing horizontal range styling

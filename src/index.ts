@@ -1,6 +1,8 @@
 export { PlayerProvider, usePlayer, EQ_BANDS, EQ_MAX_DB } from "./PlayerProvider";
 export { WinampPlayer } from "./WinampPlayer";
 export { usePrefersReducedMotion } from "./usePrefersReducedMotion";
+export { THEMES } from "./themes";
+export type { DeckTheme, ThemePack } from "./themes";
 export type { PlayerTrack, NowPlaying } from "./types";
 
 // Classic `.wsz` skin engine (sprite-based UI built on the same PlayerProvider).
