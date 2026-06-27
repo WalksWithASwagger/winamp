@@ -25,8 +25,6 @@ const STATIC: Array<[SpriteName, number, number]> = [
   ["MAIN_STEREO", 239, 41],
   ["MAIN_EQ_BUTTON", 219, 58],
   ["MAIN_PLAYLIST_BUTTON", 242, 58],
-  ["MAIN_SHUFFLE_BUTTON", 164, 89],
-  ["MAIN_REPEAT_BUTTON", 210, 89],
   ["MAIN_EJECT_BUTTON", 136, 89],
 ];
 
@@ -66,11 +64,17 @@ export function ClassicWinampPlayer({
     analyser,
     allTracks,
     currentId,
+    balance,
+    shuffle,
+    repeat,
     toggle,
     prev,
     next,
     seek,
     setVolume,
+    setBalance,
+    setShuffle,
+    setRepeat,
   } = usePlayer();
 
   const [shade, setShade] = usePersistedState(`${storageKey}:shade`, false);
@@ -185,6 +189,30 @@ export function ClassicWinampPlayer({
                 frames={28}
                 frameHeight={15}
                 style={placed(107, 57)}
+              />
+              <Slider
+                thumb="MAIN_BALANCE_THUMB"
+                thumbActive="MAIN_BALANCE_THUMB_ACTIVE"
+                value={(balance + 1) / 2}
+                onChange={(v) => setBalance(v * 2 - 1)}
+                trackWidth={38}
+                trackHeight={13}
+                style={placed(177, 57)}
+              />
+
+              <SpriteButton
+                up={shuffle ? "MAIN_SHUFFLE_BUTTON_SELECTED" : "MAIN_SHUFFLE_BUTTON"}
+                down={shuffle ? "MAIN_SHUFFLE_BUTTON" : "MAIN_SHUFFLE_BUTTON_SELECTED"}
+                onClick={() => setShuffle(!shuffle)}
+                title={shuffle ? "Shuffle on" : "Shuffle off"}
+                style={placed(164, 89)}
+              />
+              <SpriteButton
+                up={repeat ? "MAIN_REPEAT_BUTTON_SELECTED" : "MAIN_REPEAT_BUTTON"}
+                down={repeat ? "MAIN_REPEAT_BUTTON" : "MAIN_REPEAT_BUTTON_SELECTED"}
+                onClick={() => setRepeat(!repeat)}
+                title={repeat ? "Repeat on" : "Repeat off"}
+                style={placed(210, 89)}
               />
 
               <SpriteButton up="MAIN_PREVIOUS_BUTTON" down="MAIN_PREVIOUS_BUTTON_ACTIVE" onClick={prev} title="Previous" style={placed(16, 88)} />

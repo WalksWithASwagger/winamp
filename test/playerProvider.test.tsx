@@ -104,6 +104,21 @@ describe("EQ + volume clamping", () => {
     act(() => h.api.setEqEnabled(true));
     expect(h.api.eqEnabled).toBe(true);
   });
+
+  it("clamps setBalance to [-1,1] and toggles shuffle/repeat", () => {
+    const h = mount();
+    expect(h.api.balance).toBe(0);
+    expect(h.api.shuffle).toBe(false);
+    expect(h.api.repeat).toBe(false);
+    act(() => h.api.setBalance(5));
+    expect(h.api.balance).toBe(1);
+    act(() => h.api.setBalance(-5));
+    expect(h.api.balance).toBe(-1);
+    act(() => h.api.setShuffle(true));
+    expect(h.api.shuffle).toBe(true);
+    act(() => h.api.setRepeat(true));
+    expect(h.api.repeat).toBe(true);
+  });
 });
 
 describe("track stepping", () => {

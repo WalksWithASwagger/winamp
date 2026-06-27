@@ -14,6 +14,7 @@ export { Slider } from "./classic/Slider";
 export { ClassicWinampPlayer } from "./classic/ClassicWinampPlayer";
 export { ClassicEqWindow } from "./classic/ClassicEqWindow";
 export { ClassicPlaylistWindow } from "./classic/ClassicPlaylistWindow";
+export { skinMuseumUrl } from "./classic/skinMuseum";
 export { BitmapText, Marquee, TimeDisplay } from "./classic/readouts";
 export { ClassicVisualizer } from "./classic/ClassicVisualizer";
 export { glyphFor } from "./classic/font";
