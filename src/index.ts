@@ -1,6 +1,8 @@
 export { PlayerProvider, usePlayer, EQ_BANDS, EQ_MAX_DB } from "./PlayerProvider";
 export { WinampPlayer } from "./WinampPlayer";
 export { usePrefersReducedMotion } from "./usePrefersReducedMotion";
+export { usePlayerKeyboardShortcuts } from "./usePlayerKeyboardShortcuts";
+export type { KeyboardShortcutOptions } from "./usePlayerKeyboardShortcuts";
 export { THEMES } from "./themes";
 export type { DeckTheme, ThemePack } from "./themes";
 export type { PlayerTrack, NowPlaying } from "./types";

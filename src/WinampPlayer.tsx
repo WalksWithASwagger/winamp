@@ -17,6 +17,7 @@ import { EQ_BANDS, usePlayer } from "./PlayerProvider";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 import { Visualizer } from "./Visualizer";
 import { THEMES, type DeckTheme } from "./themes";
+import { usePlayerKeyboardShortcuts } from "./usePlayerKeyboardShortcuts";
 
 // Graphic-EQ presets — 10 gains (dB) aligned to EQ_BANDS. Flat = passthrough.
 const EQ_PRESETS: Record<string, number[]> = {
@@ -212,7 +213,10 @@ export function WinampPlayer({
     return () => window.removeEventListener("resize", onResize);
   }, [x, y, reduced, storageKey, setEqGains]);
 
-  // Keyboard: spacebar = play/pause; the Konami code flips on a little easter egg.
+  // Space / arrow-key media shortcuts (reusable hook).
+  usePlayerKeyboardShortcuts();
+
+  // The Konami code flips on a little easter egg.
   useEffect(() => {
     const KONAMI = [
       "arrowup", "arrowup", "arrowdown", "arrowdown",
@@ -221,21 +225,6 @@ export function WinampPlayer({
     let seq: string[] = [];
     let timer: ReturnType<typeof setTimeout>;
     const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      if (
-        t &&
-        (t.tagName === "INPUT" ||
-          t.tagName === "TEXTAREA" ||
-          t.tagName === "BUTTON" ||
-          t.isContentEditable)
-      )
-        return;
-      if (e.code === "Space") {
-        if (!currentId) return; // nothing loaded yet — let space scroll the page
-        e.preventDefault();
-        toggle();
-        return;
-      }
       seq.push(e.key.toLowerCase());
       if (seq.length > KONAMI.length) seq = seq.slice(-KONAMI.length);
       if (seq.length === KONAMI.length && KONAMI.every((k, i) => seq[i] === k)) {
@@ -251,7 +240,7 @@ export function WinampPlayer({
       window.removeEventListener("keydown", onKey);
       clearTimeout(timer);
     };
-  }, [toggle, canViz, currentId]);
+  }, [canViz]);
   // (The viz button + panel are guarded by `canViz`, so they auto-hide when it
   // becomes false — no separate close effect needed.)
 

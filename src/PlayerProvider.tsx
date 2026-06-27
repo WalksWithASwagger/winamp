@@ -218,6 +218,14 @@ export function PlayerProvider({
   const driveScene = useCallback(
     (t: PlayerTrack) => {
       onNowPlaying?.({ bpm: t.bpm, accent: t.art.palette[0] });
+      // OS media controls / lock-screen metadata (feature-detected).
+      if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: t.title,
+          artist: t.person,
+          artwork: t.coverImage ? [{ src: t.coverImage }] : [],
+        });
+      }
     },
     [onNowPlaying],
   );
@@ -307,6 +315,37 @@ export function PlayerProvider({
     if (el) el.volume = clamped;
     setVolumeState(clamped);
   }, []);
+
+  // OS media-key / lock-screen action handlers (feature-detected, bound once).
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    const ms = navigator.mediaSession;
+    const set = (action: MediaSessionAction, handler: MediaSessionActionHandler | null) => {
+      try {
+        ms.setActionHandler(action, handler);
+      } catch {
+        // some actions aren't supported in all browsers
+      }
+    };
+    set("play", () => toggle());
+    set("pause", () => toggle());
+    set("previoustrack", () => prev());
+    set("nexttrack", () => next());
+    set("seekto", (d) => {
+      if (typeof d.seekTime === "number") seek(d.seekTime);
+    });
+    return () => {
+      for (const a of ["play", "pause", "previoustrack", "nexttrack", "seekto"] as const)
+        set(a, null);
+    };
+  }, [toggle, prev, next, seek]);
+
+  // Reflect play state on the OS media session.
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = playing ? "playing" : "paused";
+    }
+  }, [playing]);
 
   // Wire the single <audio> element to React state.
   useEffect(() => {
