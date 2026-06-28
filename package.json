@@ -1,6 +1,6 @@
 {
   "name": "@walkswithaswagger/winamp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A draggable, skinnable Winamp-style audio deck for React, with a Milkdrop (Butterchurn) visualizer, a real graphic EQ, and a spectrum analyzer. Music player and visualizer for your website.",
   "license": "MIT",
   "author": "Kris Krüg",
