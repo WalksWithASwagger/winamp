@@ -12,6 +12,39 @@ import type { PlayerTrack } from "@walkswithaswagger/winamp";
 // same-origin, so they always work. A track WITHOUT audioUrl renders in the
 // playlist but is dimmed/unplayable — fine as a placeholder until files land.
 
+// Gorgeous Ghost — real local tracks (KK). The MP3s live in
+// public/audio/ but are gitignored (public repo), so this collection only
+// plays on a machine that has the files. Exported for reuse in the classic demo.
+export const gorgeousGhost: PlayerTrack[] = [
+  {
+    id: "gg-now",
+    number: 1,
+    title: "Gorgeous Ghost (NOW)",
+    person: "Kris Krüg",
+    bpm: 100,
+    audioUrl: "/audio/gorgeous-ghost-now.mp3",
+    art: { palette: ["#9b7bff"] },
+  },
+  {
+    id: "dark-door",
+    number: 2,
+    title: "The Dark's Just a Door (Remastered)",
+    person: "Kris Krüg",
+    bpm: 92,
+    audioUrl: "/audio/the-darks-just-a-door.mp3",
+    art: { palette: ["#f4604f"] },
+  },
+  {
+    id: "gg",
+    number: 3,
+    title: "Gorgeous Ghost",
+    person: "Kris Krüg",
+    bpm: 100,
+    audioUrl: "/audio/gorgeous-ghost.mp3",
+    art: { palette: ["#6dcad0"] },
+  },
+];
+
 // Ethos Labs — Suno playlist
 const ethosLabs: PlayerTrack[] = [
   {
@@ -67,6 +100,7 @@ const aiBlues: PlayerTrack[] = [
 ];
 
 export const collections = [
+  { id: "gorgeous-ghost", label: "Gorgeous Ghost", tracks: gorgeousGhost },
   { id: "ethos-labs", label: "Ethos Labs", tracks: ethosLabs },
   { id: "both-hands-full", label: "Both Hands Full", tracks: bothHandsFull },
   { id: "ai-blues", label: "AI Blues", tracks: aiBlues },
