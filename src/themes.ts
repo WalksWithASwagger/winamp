@@ -2,7 +2,14 @@
 // (defined in styles.css) and a matching spectrum palette. Distinct from .wsz
 // classic skins — these reskin the modern <WinampPlayer />.
 
-export type DeckTheme = "green" | "vaporwave" | "mono" | "amber";
+export type DeckTheme =
+  | "green"
+  | "vaporwave"
+  | "mono"
+  | "amber"
+  | "sunset"
+  | "ice"
+  | "crimson";
 
 export type ThemePack = {
   /** CSS custom-property overrides applied to the deck root. */
@@ -107,5 +114,77 @@ export const THEMES: Record<DeckTheme, ThemePack> = {
       "--wamp-edge-top": "#5a3f12",
     },
     spectrum: ["#ffb000", "#ffcf4d", "#ff8c00", "#ffd970", "#cc7000"],
+  },
+  sunset: {
+    vars: {
+      "--deck-accent": "#ff6f5e",
+      "--wamp-cyan": "#ffd27a",
+      "--wamp-yellow": "#ffb15c",
+      "--wamp-dim": "#9a6a6a",
+      "--wamp-muted": "#f0b8a8",
+      "--wamp-text": "#ffe2d2",
+      "--wamp-bg-1": "#3a2030",
+      "--wamp-bg-2": "#26121f",
+      "--wamp-bg-3": "#1a0c16",
+      "--wamp-bar-1": "#5a2f43",
+      "--wamp-bar-2": "#3a2030",
+      "--wamp-bar-3": "#2a1624",
+      "--wamp-btn-1": "#4a2738",
+      "--wamp-btn-2": "#2a1624",
+      "--wamp-btn-text": "#f0a890",
+      "--wamp-key-text": "#ffe2d2",
+      "--wamp-lcd-1": "#1e0c16",
+      "--wamp-lcd-2": "#12060d",
+      "--wamp-edge-top": "#7a3f55",
+    },
+    spectrum: ["#ff6f5e", "#ffb15c", "#ffd27a", "#ff8e6b", "#e0556a"],
+  },
+  ice: {
+    vars: {
+      "--deck-accent": "#5fd0ff",
+      "--wamp-cyan": "#bdf0ff",
+      "--wamp-yellow": "#9ad8ff",
+      "--wamp-dim": "#6a8395",
+      "--wamp-muted": "#bcd6e6",
+      "--wamp-text": "#e6f4ff",
+      "--wamp-bg-1": "#26333d",
+      "--wamp-bg-2": "#161f26",
+      "--wamp-bg-3": "#0f161b",
+      "--wamp-bar-1": "#36495a",
+      "--wamp-bar-2": "#26333d",
+      "--wamp-bar-3": "#1c2730",
+      "--wamp-btn-1": "#2e4150",
+      "--wamp-btn-2": "#1c2730",
+      "--wamp-btn-text": "#a8cfe2",
+      "--wamp-key-text": "#e6f4ff",
+      "--wamp-lcd-1": "#0a141a",
+      "--wamp-lcd-2": "#040a0e",
+      "--wamp-edge-top": "#4a6678",
+    },
+    spectrum: ["#5fd0ff", "#bdf0ff", "#7ee0ff", "#3fb0e6", "#9ad8ff"],
+  },
+  crimson: {
+    vars: {
+      "--deck-accent": "#ff3b4e",
+      "--wamp-cyan": "#ff7a86",
+      "--wamp-yellow": "#ffae5c",
+      "--wamp-dim": "#8a5560",
+      "--wamp-muted": "#e0a0a8",
+      "--wamp-text": "#ffd9dd",
+      "--wamp-bg-1": "#2e1418",
+      "--wamp-bg-2": "#1c0c0f",
+      "--wamp-bg-3": "#130809",
+      "--wamp-bar-1": "#4a1f26",
+      "--wamp-bar-2": "#2e1418",
+      "--wamp-bar-3": "#220e12",
+      "--wamp-btn-1": "#3c181e",
+      "--wamp-btn-2": "#220e12",
+      "--wamp-btn-text": "#d0808a",
+      "--wamp-key-text": "#ffd9dd",
+      "--wamp-lcd-1": "#160709",
+      "--wamp-lcd-2": "#0c0405",
+      "--wamp-edge-top": "#5a2730",
+    },
+    spectrum: ["#ff3b4e", "#ff7a86", "#ffae5c", "#e0344a", "#ff5e6e"],
   },
 };

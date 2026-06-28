@@ -61,7 +61,7 @@ declare function PlayerProvider({ tracks, onNowPlaying, children, }: {
     children: ReactNode;
 }): react.JSX.Element;
 
-type DeckTheme = "green" | "vaporwave" | "mono" | "amber";
+type DeckTheme = "green" | "vaporwave" | "mono" | "amber" | "sunset" | "ice" | "crimson";
 type ThemePack = {
     /** CSS custom-property overrides applied to the deck root. */
     vars: Record<string, string>;

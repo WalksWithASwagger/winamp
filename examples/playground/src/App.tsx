@@ -14,6 +14,9 @@ const THEME_OPTIONS: Array<{ label: string; value: DeckTheme | "default" }> = [
   { label: "Vaporwave", value: "vaporwave" },
   { label: "Mono", value: "mono" },
   { label: "Amber", value: "amber" },
+  { label: "Sunset", value: "sunset" },
+  { label: "Ice", value: "ice" },
+  { label: "Crimson", value: "crimson" },
 ];
 
 export function App() {
