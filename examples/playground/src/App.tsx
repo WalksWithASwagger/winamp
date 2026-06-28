@@ -30,7 +30,7 @@ const FREQUENCIES: Array<{
   {
     num: "88.1",
     name: "BOTH HANDS FULL",
-    desc: "The record. Full project + releases.",
+    desc: "The record — plus the Too Weird to Die album.",
     href: "https://bothhandsfull.com",
   },
   {
@@ -41,8 +41,8 @@ const FREQUENCIES: Array<{
   },
   {
     num: "100.7",
-    name: "TOO WEIRD TO DIE",
-    desc: "Link pending — drop me the URL and it goes live.",
+    name: "GORGEOUS GHOST",
+    desc: "The album — landing soon. (It's what's on the deck.)",
   },
 ];
 
