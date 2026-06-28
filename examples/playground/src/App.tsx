@@ -5,13 +5,14 @@ import {
   type DeckTheme,
 } from "@walkswithaswagger/winamp";
 import "@walkswithaswagger/winamp/styles.css";
-import { collections } from "./tracks";
+import "./hub.css";
+import { gorgeousGhost } from "./tracks";
 import { ClassicSkinDemo } from "./ClassicSkinDemo";
 
-const THEME_OPTIONS: Array<{ label: string; value: DeckTheme | "default" }> = [
+const SKINS: Array<{ label: string; value: DeckTheme | "default" }> = [
+  { label: "Ghost", value: "vaporwave" },
   { label: "Default", value: "default" },
   { label: "Green", value: "green" },
-  { label: "Vaporwave", value: "vaporwave" },
   { label: "Mono", value: "mono" },
   { label: "Amber", value: "amber" },
   { label: "Sunset", value: "sunset" },
@@ -19,72 +20,158 @@ const THEME_OPTIONS: Array<{ label: string; value: DeckTheme | "default" }> = [
   { label: "Crimson", value: "crimson" },
 ];
 
+// Other transmissions — Kris's music projects, presented as dial presets.
+const FREQUENCIES: Array<{
+  num: string;
+  name: string;
+  desc: string;
+  href?: string;
+}> = [
+  {
+    num: "88.1",
+    name: "BOTH HANDS FULL",
+    desc: "The record. Full project + releases.",
+    href: "https://bothhandsfull.com",
+  },
+  {
+    num: "92.3",
+    name: "ETHOS BLOCK PARTY",
+    desc: "Song booth — make a track, join the party.",
+    href: "https://ethosblockparty.com",
+  },
+  {
+    num: "100.7",
+    name: "TOO WEIRD TO DIE",
+    desc: "Link pending — drop me the URL and it goes live.",
+  },
+];
+
 export function App() {
-  const [active, setActive] = useState(collections[0]);
-  const [theme, setTheme] = useState<DeckTheme | "default">("default");
+  const [theme, setTheme] = useState<DeckTheme | "default">("vaporwave");
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#13101a",
-        color: "#c8bdd7",
-        fontFamily: "ui-sans-serif, system-ui, sans-serif",
-        padding: "2rem",
-      }}
-    >
-      <h1 style={{ fontSize: "1.25rem", margin: "0 0 0.25rem" }}>
-        Winamp Deck — Playground
+    <main className="station">
+      <header className="dial">
+        <span>ghost.radio.fm — kris krüg / audio lab</span>
+        <span className="tally">on air</span>
+      </header>
+
+      <h1 className="callsign">
+        GHOST<b>·</b>RADIO
       </h1>
-      <p style={{ margin: "0 0 1.5rem", color: "#8c819b", fontSize: "0.85rem" }}>
-        Local dev harness. Switch collections, drag the deck, open the EQ /
-        playlist / visualizer. Add audio under <code>public/audio/</code> to play.
+      <p className="tagline">
+        A pirate signal for <b>AI music, half-finished albums, and a Winamp
+        that still rips.</b> Tune in, drag the deck around, blow out the EQ.
       </p>
 
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem" }}>
-        {collections.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => setActive(c)}
-            style={{
-              padding: "0.4rem 0.8rem",
-              borderRadius: 6,
-              border: "1px solid #2a2438",
-              background: c.id === active.id ? "#2a2438" : "transparent",
-              color: "inherit",
-              cursor: "pointer",
-            }}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
-
-      <label style={{ display: "block", marginBottom: "1.5rem", fontSize: "0.85rem" }}>
-        Modern deck theme:{" "}
-        <select
-          value={theme}
-          onChange={(e) => setTheme(e.target.value as DeckTheme | "default")}
-          style={{ background: "#2a2438", color: "#c8bdd7", border: "1px solid #3a3450", borderRadius: 4, padding: "2px 6px" }}
-        >
-          {THEME_OPTIONS.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
+      {/* ---- now broadcasting: the floating deck plays this set ---- */}
+      <section className="band">
+        <h2 className="band-label">Now broadcasting</h2>
+        <p className="now-hint">
+          The deck floats top-right — drag it anywhere, pop the EQ and the
+          visualizer, blow out the bass. Tonight's set:
+        </p>
+        <ol className="setlist">
+          {gorgeousGhost.map((t) => (
+            <li key={t.id}>
+              <span className="set-n">
+                {String(t.number).padStart(2, "0")}
+              </span>
+              <span className="set-t">{t.title}</span>
+              <span className="set-bpm">{t.bpm ? `${t.bpm} bpm` : ""}</span>
+            </li>
           ))}
-        </select>
-      </label>
+        </ol>
+        <div className="skin-dial">
+          <label htmlFor="skin">deck skin</label>
+          <select
+            id="skin"
+            value={theme}
+            onChange={(e) => setTheme(e.target.value as DeckTheme | "default")}
+          >
+            {SKINS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        {/* The deck is position:fixed — it floats over the whole page. */}
+        <PlayerProvider tracks={gorgeousGhost}>
+          <WinampPlayer
+            wordmarkText="GHOST RADIO"
+            theme={theme === "default" ? undefined : theme}
+          />
+        </PlayerProvider>
+      </section>
 
-      {/* key forces a fresh PlayerProvider when the collection changes */}
-      <PlayerProvider key={active.id} tracks={active.tracks}>
-        <WinampPlayer
-          wordmarkText={active.label}
-          theme={theme === "default" ? undefined : theme}
-        />
-      </PlayerProvider>
+      {/* ---- transmission log: about the player ---- */}
+      <section className="band">
+        <h2 className="band-label">Transmission log</h2>
+        <div className="prose">
+          <p>
+            This deck is <b>open source</b> — a draggable, skinnable Winamp for
+            React with a real 10-band EQ, a Milkdrop/Butterchurn visualizer, and
+            an engine that loads authentic <code>.wsz</code> skins. It's the same
+            player you're hearing right now.
+          </p>
+          <p className="muted">
+            Pull it into your own site:{" "}
+            <a href="https://github.com/WalksWithASwagger/winamp">
+              github.com/WalksWithASwagger/winamp
+            </a>{" "}
+            ·{" "}
+            <a href="https://www.npmjs.com/package/@walkswithaswagger/winamp">
+              npm i @walkswithaswagger/winamp
+            </a>
+          </p>
+        </div>
+      </section>
 
-      {/* Classic window has its own provider + demo audio (see component). */}
-      <ClassicSkinDemo />
-    </div>
+      {/* ---- other frequencies: link-out stations ---- */}
+      <section className="band">
+        <h2 className="band-label">Other frequencies</h2>
+        <nav className="frequencies">
+          {FREQUENCIES.map((f) => (
+            <a
+              key={f.num}
+              className="freq"
+              href={f.href ?? "#"}
+              aria-disabled={f.href ? undefined : "true"}
+              target={f.href ? "_blank" : undefined}
+              rel={f.href ? "noreferrer" : undefined}
+            >
+              <span className="freq-num">{f.num}</span>
+              <span>
+                <span className="freq-name">{f.name}</span>
+                <span className="freq-desc">{f.desc}</span>
+              </span>
+              <span className="freq-go">{f.href ? "tune in →" : "soon"}</span>
+            </a>
+          ))}
+        </nav>
+      </section>
+
+      {/* ---- classic-skin showcase: the real .wsz engine ---- */}
+      <section className="band">
+        <h2 className="band-label">Classic booth · real .wsz skins</h2>
+        <div className="prose" style={{ marginBottom: "1.25rem" }}>
+          <p className="muted">
+            The same engine, wearing real Winamp 2 skins — main, EQ, and playlist
+            windows. Switch skins live.
+          </p>
+        </div>
+        <div className="booth">
+          <ClassicSkinDemo />
+        </div>
+      </section>
+
+      <footer className="colophon">
+        <span>© 2026 Kris Krüg</span>
+        <a href="https://github.com/WalksWithASwagger/winamp">source</a>
+        <span>built with the ghost radio deck</span>
+        <span>ghost.radio.fm</span>
+      </footer>
+    </main>
   );
 }
