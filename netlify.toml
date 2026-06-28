@@ -1,0 +1,8 @@
+# ghost.radio.fm — static hub deploy (the playground app).
+# Mirrors vercel.json's build so a Git-connected Netlify deploy works too.
+[build]
+  command = "pnpm --filter playground build"
+  publish = "examples/playground/dist"
+
+[build.environment]
+  NPM_FLAGS = "--version" # let Netlify use pnpm (packageManager field) instead of npm install
