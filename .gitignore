@@ -5,3 +5,4 @@ node_modules/
 
 # Example app build output (the library's own dist/ is committed)
 examples/*/dist/
+.vercel
