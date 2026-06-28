@@ -2,7 +2,21 @@ import { describe, expect, it } from "vitest";
 import { THEMES, type DeckTheme } from "../src";
 
 describe("theme packs", () => {
-  const names: DeckTheme[] = ["green", "vaporwave", "mono", "amber"];
+  const names = Object.keys(THEMES) as DeckTheme[];
+
+  it("ships the expected set", () => {
+    expect(names).toEqual(
+      expect.arrayContaining([
+        "green",
+        "vaporwave",
+        "mono",
+        "amber",
+        "sunset",
+        "ice",
+        "crimson",
+      ]),
+    );
+  });
 
   it("defines each theme with deck-accent vars and a spectrum palette", () => {
     for (const name of names) {

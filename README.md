@@ -23,7 +23,7 @@ friendly.
   presets.
 - 📊 **Spectrum analyzer** + **Butterchurn/Milkdrop visualizer** with a preset
   picker (next / prev / shuffle).
-- 🎨 **Theme packs** — `green` / `vaporwave` / `mono` / `amber`, or your own CSS
+- 🎨 **Theme packs** — `green` / `vaporwave` / `mono` / `amber` / `sunset` / `ice` / `crimson`, or your own CSS
   tokens.
 - ⌨️ **Keyboard shortcuts** + **MediaSession** (OS media keys & lock-screen
   metadata).
@@ -104,7 +104,7 @@ Exports `EQ_BANDS` (`[60,170,310,600,1000,3000,6000,12000,14000,16000]`) and
 
 | Prop | Default | Description |
 | ---- | ------- | ----------- |
-| `theme` | — | `"green" \| "vaporwave" \| "mono" \| "amber"` token pack |
+| `theme` | — | token pack: `green` \| `vaporwave` \| `mono` \| `amber` \| `sunset` \| `ice` \| `crimson` |
 | `storageKey` | `"deckState"` | localStorage key for position/size/EQ preset |
 | `wordmarkSrc` | — | logo image in the title bar |
 | `wordmarkText` | `"ETHọ́S·FM"` | logo text |
