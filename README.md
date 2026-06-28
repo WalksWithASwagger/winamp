@@ -1,5 +1,7 @@
 # @walkswithaswagger/winamp
 
+[![npm](https://img.shields.io/npm/v/@walkswithaswagger/winamp.svg)](https://www.npmjs.com/package/@walkswithaswagger/winamp) &nbsp;**[▶ Live demo](https://winamp-chi.vercel.app)**
+
 A draggable, skinnable **Winamp-style audio deck for React** — one shared Web
 Audio engine driving **two front-ends**:
 
