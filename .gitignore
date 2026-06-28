@@ -5,9 +5,3 @@ node_modules/
 
 # Example app build output (the library's own dist/ is committed)
 examples/*/dist/
-
-# Demo audio/art are local-only (KK's tracks; public repo) — keep dirs via .gitkeep
-examples/playground/public/audio/*
-!examples/playground/public/audio/.gitkeep
-examples/playground/public/art/*
-!examples/playground/public/art/.gitkeep

@@ -702,7 +702,7 @@ function Spectrum({ colors }) {
 }
 function WinampPlayer({
   storageKey = "deckState",
-  wordmarkSrc = "/ethos-art/ethos-mask-cream.png",
+  wordmarkSrc,
   wordmarkText = "ETH\u1ECD\u0301S\xB7FM",
   spectrumColors,
   theme
@@ -904,7 +904,7 @@ function WinampPlayer({
               onPointerDown: startDrag,
               onDoubleClick: onBarDoubleClick,
               children: [
-                /* @__PURE__ */ jsxRuntime.jsx(
+                wordmarkSrc && /* @__PURE__ */ jsxRuntime.jsx(
                   "img",
                   {
                     className: "deck-mark-img",

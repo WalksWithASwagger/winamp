@@ -98,7 +98,7 @@ function Spectrum({ colors }: { colors: string[] }) {
 
 export function WinampPlayer({
   storageKey = "deckState",
-  wordmarkSrc = "/ethos-art/ethos-mask-cream.png",
+  wordmarkSrc,
   wordmarkText = "ETHọ́S·FM",
   spectrumColors,
   theme,
@@ -328,12 +328,14 @@ export function WinampPlayer({
           onPointerDown={startDrag}
           onDoubleClick={onBarDoubleClick}
         >
-        <img
-          className="deck-mark-img"
-          src={wordmarkSrc}
-          alt=""
-          aria-hidden="true"
-        />
+        {wordmarkSrc && (
+          <img
+            className="deck-mark-img"
+            src={wordmarkSrc}
+            alt=""
+            aria-hidden="true"
+          />
+        )}
         <span className="deck-wordmark">{wordmarkText}</span>
         <span className="deck-bar-fill" aria-hidden="true" />
         <div className="deck-bar-btns">
