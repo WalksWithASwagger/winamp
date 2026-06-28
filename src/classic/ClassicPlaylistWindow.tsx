@@ -4,6 +4,7 @@ import { type CSSProperties } from "react";
 import { usePlayer } from "../PlayerProvider";
 import { useSkin } from "./useSkin";
 import { SkinProvider, useSkinContext } from "./SkinContext";
+import { usePersistedState } from "./usePersistedState";
 import type { SpriteName } from "./skinSprites";
 
 const W = 275;
@@ -13,6 +14,7 @@ const BOTTOM_H = 38;
 const LEFT_W = 12;
 const RIGHT_W = 20;
 const TITLE_W = 100;
+const SHADE_H = 14;
 
 // A skin sprite stretched/tiled to fill a region (frames are too small to size
 // from SPRITE_DIMS alone, so width/height are explicit here).
@@ -58,12 +60,15 @@ function Tile({
 export function ClassicPlaylistWindow({
   skinUrl,
   scale = 1,
+  storageKey = "classicPlaylist",
 }: {
   skinUrl: string;
   scale?: number;
+  storageKey?: string;
 }) {
   const { skin, status } = useSkin(skinUrl);
   const { allTracks, currentId, playTrack } = usePlayer();
+  const [shade, setShade] = usePersistedState(`${storageKey}:shade`, false);
 
   const colors = skin?.colors;
   const normal = colors?.playlistNormal ?? "#00ff00";
@@ -72,25 +77,45 @@ export function ClassicPlaylistWindow({
   const selectedBg = colors?.playlistSelectedBackground ?? "#0000c6";
 
   const titleLeft = Math.round((W - TITLE_W) / 2);
+  const height = shade ? SHADE_H : H;
+
+  // Double-click the title bar to toggle window-shade.
+  const shadeToggle = (
+    <div
+      onDoubleClick={() => setShade(!shade)}
+      title="Double-click to toggle windowshade"
+      style={{ position: "absolute", left: 25, top: 0, width: W - 75, height: SHADE_H, cursor: "pointer" }}
+    />
+  );
 
   return (
     <SkinProvider skin={skin}>
-      <div data-pl-status={status} style={{ width: W * scale, height: H * scale }}>
+      <div data-pl-status={status} data-shade={shade ? "true" : "false"} style={{ width: W * scale, height: height * scale }}>
         <div
           style={{
             position: "relative",
             width: W,
-            height: H,
+            height,
             transform: scale === 1 ? undefined : `scale(${scale})`,
             transformOrigin: "top left",
             imageRendering: "pixelated",
           }}
         >
+          {shade ? (
+            <>
+              <Tile name="PLAYLIST_SHADE_LEFT" left={0} top={0} width={25} height={SHADE_H} repeat="no-repeat" />
+              <Tile name="PLAYLIST_SHADE_CENTER" left={25} top={0} width={W - 75} height={SHADE_H} repeat="repeat-x" />
+              <Tile name="PLAYLIST_SHADE_RIGHT" left={W - 50} top={0} width={50} height={SHADE_H} repeat="no-repeat" />
+              {shadeToggle}
+            </>
+          ) : (
+          <>
           {/* Frame: top strip, side tiles, bottom corners. */}
           <Tile name="PLAYLIST_TOP_TILE_SELECTED" left={0} top={0} width={W} height={TOP_H} repeat="repeat-x" />
           <Tile name="PLAYLIST_TOP_LEFT_SELECTED" left={0} top={0} width={25} height={TOP_H} repeat="no-repeat" />
           <Tile name="PLAYLIST_TITLE_BAR_SELECTED" left={titleLeft} top={0} width={TITLE_W} height={TOP_H} repeat="no-repeat" />
           <Tile name="PLAYLIST_TOP_RIGHT_CORNER_SELECTED" left={W - 25} top={0} width={25} height={TOP_H} repeat="no-repeat" />
+          {shadeToggle}
           <Tile name="PLAYLIST_LEFT_TILE" left={0} top={TOP_H} width={LEFT_W} height={H - TOP_H - BOTTOM_H} repeat="repeat-y" />
           <Tile name="PLAYLIST_RIGHT_TILE" left={W - RIGHT_W} top={TOP_H} width={RIGHT_W} height={H - TOP_H - BOTTOM_H} repeat="repeat-y" />
           <Tile name="PLAYLIST_BOTTOM_LEFT_CORNER" left={0} top={H - BOTTOM_H} width={125} height={BOTTOM_H} repeat="no-repeat" />
@@ -134,6 +159,8 @@ export function ClassicPlaylistWindow({
               );
             })}
           </div>
+          </>
+          )}
         </div>
       </div>
     </SkinProvider>

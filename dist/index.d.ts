@@ -219,9 +219,10 @@ declare function ClassicWinampPlayer({ skinUrl, scale, storageKey, }: {
  * preamp and the on/off toggle use the additive engine controls. Render inside a
  * `<PlayerProvider>`, with the same `skinUrl` as the main window.
  */
-declare function ClassicEqWindow({ skinUrl, scale, }: {
+declare function ClassicEqWindow({ skinUrl, scale, storageKey, }: {
     skinUrl: string;
     scale?: number;
+    storageKey?: string;
 }): react.JSX.Element;
 
 /**
@@ -230,9 +231,10 @@ declare function ClassicEqWindow({ skinUrl, scale, }: {
  * clicking a playable row plays it; the current track is highlighted. Render
  * inside a `<PlayerProvider>` with the same `skinUrl` as the main window.
  */
-declare function ClassicPlaylistWindow({ skinUrl, scale, }: {
+declare function ClassicPlaylistWindow({ skinUrl, scale, storageKey, }: {
     skinUrl: string;
     scale?: number;
+    storageKey?: string;
 }): react.JSX.Element;
 
 /** URL of a Skin Museum `.wsz` by its MD5 hash. */

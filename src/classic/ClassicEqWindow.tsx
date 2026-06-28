@@ -6,8 +6,10 @@ import { useSkin } from "./useSkin";
 import { SkinProvider, useSkinContext } from "./SkinContext";
 import { Sprite, SpriteButton } from "./Sprite";
 import { Slider } from "./Slider";
+import { usePersistedState } from "./usePersistedState";
 
 const W = 275;
+const SHADE_H = 14;
 const H = 116;
 const BAND_TOP = 38;
 const BAND_TRACK_H = 63;
@@ -61,29 +63,51 @@ function EqGraph({ gains, preamp }: { gains: number[]; preamp: number }) {
 export function ClassicEqWindow({
   skinUrl,
   scale = 1,
+  storageKey = "classicEq",
 }: {
   skinUrl: string;
   scale?: number;
+  storageKey?: string;
 }) {
   const { skin, status } = useSkin(skinUrl);
   const { eqGains, eqEnabled, preamp, setEqGain, setEqEnabled, setPreamp } =
     usePlayer();
+  const [shade, setShade] = usePersistedState(`${storageKey}:shade`, false);
+  const height = shade ? SHADE_H : H;
+
+  // Double-click the title bar to toggle window-shade (authentic Winamp).
+  const shadeToggle = (
+    <div
+      onDoubleClick={() => setShade(!shade)}
+      title="Double-click to toggle windowshade"
+      style={{ position: "absolute", left: 0, top: 0, width: W - 11, height: SHADE_H, cursor: "pointer" }}
+    />
+  );
 
   return (
     <SkinProvider skin={skin}>
-      <div data-eq-status={status} style={{ width: W * scale, height: H * scale }}>
+      <div data-eq-status={status} data-shade={shade ? "true" : "false"} style={{ width: W * scale, height: height * scale }}>
         <div
           style={{
             position: "relative",
             width: W,
-            height: H,
+            height,
             transform: scale === 1 ? undefined : `scale(${scale})`,
             transformOrigin: "top left",
             imageRendering: "pixelated",
           }}
         >
+          {shade ? (
+            <>
+              <Sprite name="EQ_TITLE_BAR_SELECTED" style={placed(0, 0)} />
+              {shadeToggle}
+              <Sprite name="EQ_CLOSE_BUTTON" style={placed(264, 3)} />
+            </>
+          ) : (
+          <>
           <Sprite name="EQ_WINDOW_BACKGROUND" style={placed(0, 0)} />
           <Sprite name="EQ_TITLE_BAR_SELECTED" style={placed(0, 0)} />
+          {shadeToggle}
           <SpriteButton
             up={eqEnabled ? "EQ_ON_BUTTON_SELECTED" : "EQ_ON_BUTTON"}
             down={eqEnabled ? "EQ_ON_BUTTON" : "EQ_ON_BUTTON_SELECTED"}
@@ -119,6 +143,8 @@ export function ClassicEqWindow({
               style={placed(BAND_X0 + i * BAND_STEP, BAND_TOP)}
             />
           ))}
+          </>
+          )}
         </div>
       </div>
     </SkinProvider>
