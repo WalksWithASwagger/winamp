@@ -20,6 +20,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Demo / site
 
 - Live demo on Vercel (auto-deploys from `main`): https://winamp-chi.vercel.app
+- **[ghost.radio.fm](https://ghost.radio.fm)** — Kris's audio/music hub built on the
+  playground (Netlify-hosted; Vercel can't take `*.radio.fm` because `radio.fm` isn't on
+  the Public Suffix List). Floating deck + setlist, project/GitHub blurb, dial-preset links
+  to other releases, and the classic `.wsz` booth.
+- **Ghost graphic deck skin** (hub-only, app-level) — a real *graphic* skin on the modern
+  deck, beyond color tokens: ghost logo (`wordmarkSrc`), VT323 pixel-LCD readout, CRT
+  scanlines, and a violet aura that harmonizes with the selected theme's `--deck-accent`.
+  Productionizing this asset layer into the library is on the roadmap.
 - Default **Gorgeous Ghost** collection with real audio + cover art (extracted
   from the tracks) driving artwork + per-track deck tinting.
 

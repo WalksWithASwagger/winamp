@@ -96,13 +96,18 @@ export function App() {
             ))}
           </select>
         </div>
-        {/* The deck is position:fixed — it floats over the whole page. */}
-        <PlayerProvider tracks={gorgeousGhost}>
-          <WinampPlayer
-            wordmarkText="GHOST RADIO"
-            theme={theme === "default" ? undefined : theme}
-          />
-        </PlayerProvider>
+        {/* The deck is position:fixed — it floats over the whole page.
+            .deck-ghost-scope wraps it so the graphic-skin CSS (hub.css) is
+            scoped to this deck and leaves the classic booth untouched. */}
+        <div className="deck-ghost-scope">
+          <PlayerProvider tracks={gorgeousGhost}>
+            <WinampPlayer
+              wordmarkText="GHOST RADIO"
+              wordmarkSrc="/art/ghost-mark.svg"
+              theme={theme === "default" ? undefined : theme}
+            />
+          </PlayerProvider>
+        </div>
       </section>
 
       {/* ---- transmission log: about the player ---- */}
