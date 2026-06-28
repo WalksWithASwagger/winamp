@@ -23,7 +23,8 @@ export const gorgeousGhost: PlayerTrack[] = [
     person: "Kris Krüg",
     bpm: 100,
     audioUrl: "/audio/gorgeous-ghost-now.mp3",
-    art: { palette: ["#9b7bff"] },
+    coverImage: "/art/gorgeous-ghost-now.jpg",
+    art: { palette: ["#b49cff"] },
   },
   {
     id: "dark-door",
@@ -32,7 +33,8 @@ export const gorgeousGhost: PlayerTrack[] = [
     person: "Kris Krüg",
     bpm: 92,
     audioUrl: "/audio/the-darks-just-a-door.mp3",
-    art: { palette: ["#f4604f"] },
+    coverImage: "/art/the-darks-just-a-door.jpg",
+    art: { palette: ["#e6a64d"] },
   },
   {
     id: "gg",
@@ -41,7 +43,8 @@ export const gorgeousGhost: PlayerTrack[] = [
     person: "Kris Krüg",
     bpm: 100,
     audioUrl: "/audio/gorgeous-ghost.mp3",
-    art: { palette: ["#6dcad0"] },
+    coverImage: "/art/gorgeous-ghost.jpg",
+    art: { palette: ["#d2a6e8"] },
   },
 ];
 
