@@ -1345,7 +1345,11 @@ var SKIN_SPRITES = {
     { name: "PLAYLIST_LEFT_TILE", x: 0, y: 42, width: 12, height: 29 },
     { name: "PLAYLIST_RIGHT_TILE", x: 31, y: 42, width: 20, height: 29 },
     { name: "PLAYLIST_BOTTOM_LEFT_CORNER", x: 0, y: 72, width: 125, height: 38 },
-    { name: "PLAYLIST_BOTTOM_RIGHT_CORNER", x: 126, y: 72, width: 150, height: 38 }
+    { name: "PLAYLIST_BOTTOM_RIGHT_CORNER", x: 126, y: 72, width: 150, height: 38 },
+    // Window-shade bar (collapsed playlist): left + tiled center + right.
+    { name: "PLAYLIST_SHADE_LEFT", x: 72, y: 42, width: 25, height: 14 },
+    { name: "PLAYLIST_SHADE_CENTER", x: 72, y: 57, width: 25, height: 14 },
+    { name: "PLAYLIST_SHADE_RIGHT", x: 99, y: 42, width: 50, height: 14 }
   ]
 };
 var SPRITE_DIMS = Object.fromEntries(
@@ -1938,6 +1942,7 @@ function ClassicWinampPlayer({
   ) });
 }
 var W = 275;
+var SHADE_H = 14;
 var H = 116;
 var BAND_TOP = 38;
 var BAND_TRACK_H = 63;
@@ -1980,24 +1985,40 @@ function EqGraph({ gains, preamp }) {
 }
 function ClassicEqWindow({
   skinUrl,
-  scale = 1
+  scale = 1,
+  storageKey = "classicEq"
 }) {
   const { skin, status } = useSkin(skinUrl);
   const { eqGains, eqEnabled, preamp, setEqGain, setEqEnabled, setPreamp } = usePlayer();
-  return /* @__PURE__ */ jsx(SkinProvider, { skin, children: /* @__PURE__ */ jsx("div", { "data-eq-status": status, style: { width: W * scale, height: H * scale }, children: /* @__PURE__ */ jsxs(
+  const [shade, setShade] = usePersistedState(`${storageKey}:shade`, false);
+  const height = shade ? SHADE_H : H;
+  const shadeToggle = /* @__PURE__ */ jsx(
+    "div",
+    {
+      onDoubleClick: () => setShade(!shade),
+      title: "Double-click to toggle windowshade",
+      style: { position: "absolute", left: 0, top: 0, width: W - 11, height: SHADE_H, cursor: "pointer" }
+    }
+  );
+  return /* @__PURE__ */ jsx(SkinProvider, { skin, children: /* @__PURE__ */ jsx("div", { "data-eq-status": status, "data-shade": shade ? "true" : "false", style: { width: W * scale, height: height * scale }, children: /* @__PURE__ */ jsx(
     "div",
     {
       style: {
         position: "relative",
         width: W,
-        height: H,
+        height,
         transform: scale === 1 ? void 0 : `scale(${scale})`,
         transformOrigin: "top left",
         imageRendering: "pixelated"
       },
-      children: [
+      children: shade ? /* @__PURE__ */ jsxs(Fragment, { children: [
+        /* @__PURE__ */ jsx(Sprite, { name: "EQ_TITLE_BAR_SELECTED", style: placed2(0, 0) }),
+        shadeToggle,
+        /* @__PURE__ */ jsx(Sprite, { name: "EQ_CLOSE_BUTTON", style: placed2(264, 3) })
+      ] }) : /* @__PURE__ */ jsxs(Fragment, { children: [
         /* @__PURE__ */ jsx(Sprite, { name: "EQ_WINDOW_BACKGROUND", style: placed2(0, 0) }),
         /* @__PURE__ */ jsx(Sprite, { name: "EQ_TITLE_BAR_SELECTED", style: placed2(0, 0) }),
+        shadeToggle,
         /* @__PURE__ */ jsx(
           SpriteButton,
           {
@@ -2038,7 +2059,7 @@ function ClassicEqWindow({
           },
           i
         ))
-      ]
+      ] })
     }
   ) }) });
 }
@@ -2049,6 +2070,7 @@ var BOTTOM_H = 38;
 var LEFT_W = 12;
 var RIGHT_W = 20;
 var TITLE_W = 100;
+var SHADE_H2 = 14;
 function Tile({
   name,
   left,
@@ -2077,32 +2099,49 @@ function Tile({
 }
 function ClassicPlaylistWindow({
   skinUrl,
-  scale = 1
+  scale = 1,
+  storageKey = "classicPlaylist"
 }) {
   const { skin, status } = useSkin(skinUrl);
   const { allTracks, currentId, playTrack } = usePlayer();
+  const [shade, setShade] = usePersistedState(`${storageKey}:shade`, false);
   const colors = skin?.colors;
   const normal = colors?.playlistNormal ?? "#00ff00";
   const current = colors?.playlistCurrent ?? "#ffffff";
   const bg = colors?.playlistNormalBackground ?? "#000000";
   const selectedBg = colors?.playlistSelectedBackground ?? "#0000c6";
   const titleLeft = Math.round((W2 - TITLE_W) / 2);
-  return /* @__PURE__ */ jsx(SkinProvider, { skin, children: /* @__PURE__ */ jsx("div", { "data-pl-status": status, style: { width: W2 * scale, height: H2 * scale }, children: /* @__PURE__ */ jsxs(
+  const height = shade ? SHADE_H2 : H2;
+  const shadeToggle = /* @__PURE__ */ jsx(
+    "div",
+    {
+      onDoubleClick: () => setShade(!shade),
+      title: "Double-click to toggle windowshade",
+      style: { position: "absolute", left: 25, top: 0, width: W2 - 75, height: SHADE_H2, cursor: "pointer" }
+    }
+  );
+  return /* @__PURE__ */ jsx(SkinProvider, { skin, children: /* @__PURE__ */ jsx("div", { "data-pl-status": status, "data-shade": shade ? "true" : "false", style: { width: W2 * scale, height: height * scale }, children: /* @__PURE__ */ jsx(
     "div",
     {
       style: {
         position: "relative",
         width: W2,
-        height: H2,
+        height,
         transform: scale === 1 ? void 0 : `scale(${scale})`,
         transformOrigin: "top left",
         imageRendering: "pixelated"
       },
-      children: [
+      children: shade ? /* @__PURE__ */ jsxs(Fragment, { children: [
+        /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_SHADE_LEFT", left: 0, top: 0, width: 25, height: SHADE_H2, repeat: "no-repeat" }),
+        /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_SHADE_CENTER", left: 25, top: 0, width: W2 - 75, height: SHADE_H2, repeat: "repeat-x" }),
+        /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_SHADE_RIGHT", left: W2 - 50, top: 0, width: 50, height: SHADE_H2, repeat: "no-repeat" }),
+        shadeToggle
+      ] }) : /* @__PURE__ */ jsxs(Fragment, { children: [
         /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_TOP_TILE_SELECTED", left: 0, top: 0, width: W2, height: TOP_H, repeat: "repeat-x" }),
         /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_TOP_LEFT_SELECTED", left: 0, top: 0, width: 25, height: TOP_H, repeat: "no-repeat" }),
         /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_TITLE_BAR_SELECTED", left: titleLeft, top: 0, width: TITLE_W, height: TOP_H, repeat: "no-repeat" }),
         /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_TOP_RIGHT_CORNER_SELECTED", left: W2 - 25, top: 0, width: 25, height: TOP_H, repeat: "no-repeat" }),
+        shadeToggle,
         /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_LEFT_TILE", left: 0, top: TOP_H, width: LEFT_W, height: H2 - TOP_H - BOTTOM_H, repeat: "repeat-y" }),
         /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_RIGHT_TILE", left: W2 - RIGHT_W, top: TOP_H, width: RIGHT_W, height: H2 - TOP_H - BOTTOM_H, repeat: "repeat-y" }),
         /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_BOTTOM_LEFT_CORNER", left: 0, top: H2 - BOTTOM_H, width: 125, height: BOTTOM_H, repeat: "no-repeat" }),
@@ -2152,7 +2191,7 @@ function ClassicPlaylistWindow({
             })
           }
         )
-      ]
+      ] })
     }
   ) }) });
 }

@@ -1,4 +1,4 @@
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ClassicPlaylistWindow,
@@ -15,6 +15,7 @@ const tracks: PlayerTrack[] = [
 
 beforeEach(() => {
   globalThis.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch;
+  window.localStorage.clear();
 });
 afterEach(() => {
   document.body.innerHTML = "";
@@ -34,7 +35,9 @@ describe("ClassicPlaylistWindow", () => {
       </PlayerProvider>,
     );
     const win = container.querySelector("[data-pl-status]") as HTMLElement;
-    const rows = [...win.querySelectorAll<HTMLElement>("div[title]")];
+    const rows = [...win.querySelectorAll<HTMLElement>("div[title]")].filter((d) =>
+      /^\d+\.\s/.test(d.textContent ?? ""),
+    );
     expect(rows.length).toBe(3);
 
     act(() => (rows[1] as HTMLElement).click());
@@ -43,5 +46,20 @@ describe("ClassicPlaylistWindow", () => {
     // Unplayable row is dimmed and does not change the current track.
     act(() => (rows[2] as HTMLElement).click());
     expect(api!.currentId).toBe("b");
+  });
+
+  it("collapses to a 14px shade bar on title-bar double-click", () => {
+    const { container } = render(
+      <PlayerProvider tracks={tracks}>
+        <ClassicPlaylistWindow skinUrl="http://example.test/skin.wsz" />
+      </PlayerProvider>,
+    );
+    const win = () => container.querySelector("[data-pl-status]") as HTMLElement;
+    expect(win().dataset.shade).toBe("false");
+    fireEvent.doubleClick(
+      container.querySelector('[title="Double-click to toggle windowshade"]')!,
+    );
+    expect(win().dataset.shade).toBe("true");
+    expect((win().firstElementChild as HTMLElement).style.height).toBe("14px");
   });
 });
