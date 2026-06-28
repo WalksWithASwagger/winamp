@@ -180,13 +180,14 @@ import {
   windowshade (title-bar button) + double-size (double-click title bar),
   persisted under `storageKey`.
 - **`ClassicEqWindow`** — 10-band EQ + preamp + on/off + curve graph (1:1 with
-  the engine's `EQ_BANDS`).
+  the engine's `EQ_BANDS`); double-click its title bar to windowshade.
 - **`ClassicPlaylistWindow`** — track list in `pledit.txt` colors; click a row to
-  play.
+  play; double-click its title bar to windowshade.
 
-Each takes `skinUrl` (reactive — change it to switch skins at runtime) and
-`scale`. Skins parse asynchronously and **never throw into the tree** (failures
-surface as a status).
+Each takes `skinUrl` (reactive — change it to switch skins at runtime), `scale`,
+and `storageKey` (persists windowshade state). All three windows support
+windowshade. Skins parse asynchronously and **never throw into the tree**
+(failures surface as a status).
 
 **Loading skins.** Any CORS-enabled `.wsz` URL works. For the Skin Museum:
 

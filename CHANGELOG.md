@@ -6,6 +6,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Three more modern-deck theme packs — `sunset`, `ice`, `crimson` (7 total).
+- Window-shade for the classic **EQ** and **playlist** windows (double-click the
+  title bar); all three classic windows now shade, persisted per window.
+
+### Changed
+
+- `WinampPlayer` renders the title-bar logo `<img>` only when `wordmarkSrc` is
+  provided (default is now `undefined`, not a private asset path).
+
+### Demo / site
+
+- Live demo on Vercel (auto-deploys from `main`): https://winamp-chi.vercel.app
+- Default **Gorgeous Ghost** collection with real audio + cover art (extracted
+  from the tracks) driving artwork + per-track deck tinting.
+
 ## [0.2.0]
 
 ### Added

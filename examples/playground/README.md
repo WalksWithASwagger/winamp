@@ -19,14 +19,21 @@ second terminal:
 pnpm dev        # tsup --watch, at the repo root
 ```
 
-## Adding audio
+Live: **https://winamp-chi.vercel.app** (auto-deploys from `main`).
 
-`src/tracks.ts` seeds three collections (Ethos Labs, Both Hands Full, AI Blues)
-with placeholder entries. To make them play:
+## Tracks
+
+`src/tracks.ts` defines the collections. The default **Gorgeous Ghost**
+collection ships real audio + cover art (committed under `public/audio` and
+`public/art`); **Ethos Labs / Both Hands Full / AI Blues** are placeholder
+teasers awaiting audio.
+
+To add a collection's audio:
 
 1. Drop MP3s in `public/audio/` and cover art in `public/art/`.
 2. Set `audioUrl: "/audio/<file>.mp3"` and `coverImage: "/art/<file>.jpg"` on
-   each track, and fill in real titles + BPM.
+   each track, and fill in real titles + BPM. (Cover art also tints the deck via
+   `art.palette[0]`.)
 
 Local files under `public/` are same-origin, so the Web Audio analyser (used by
 the spectrum + Butterchurn visualizer) works without CORS configuration.
