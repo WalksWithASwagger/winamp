@@ -33,8 +33,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Live demo on Vercel (auto-deploys from `main`): https://winamp-chi.vercel.app
 - **[ghost.radio.fm](https://ghost.radio.fm)** — Kris's audio/music hub built on the
   playground (Netlify-hosted; Vercel can't take `*.radio.fm` because `radio.fm` isn't on
-  the Public Suffix List). Floating deck + setlist, project/GitHub blurb, dial-preset links
-  to other releases, and the classic `.wsz` booth.
+  the Public Suffix List). Floating deck + setlist, project/GitHub blurb, and the classic
+  `.wsz` booth.
+- **Dial tunes the deck** — three stations (88.1 Both Hands Full / 92.3 Ethos Block Party /
+  100.7 Gorgeous Ghost) swap what the deck plays. Too Weird to Die + Ethos stream straight
+  from Suno's public CDN (CORS `*`, so the visualizer/EQ work — zero audio committed);
+  Gorgeous Ghost is local. Regenerate from the playlists with
+  `node examples/playground/scripts/sync-suno.mjs`.
 - The hub defaults to the **`ghost`** deck skin and ships a grouped skin / color-theme
   picker (loads VT323 so the pixel-LCD readout renders crisp).
 - Default **Gorgeous Ghost** collection with real audio + cover art (extracted

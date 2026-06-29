@@ -7,7 +7,7 @@ import {
 import "@walkswithaswagger/winamp/styles.css";
 import "@walkswithaswagger/winamp/skins.css";
 import "./hub.css";
-import { gorgeousGhost } from "./tracks";
+import { STATIONS } from "./tracks";
 import { ClassicSkinDemo } from "./ClassicSkinDemo";
 
 // Graphic skins (imagery + pixel font + scanlines) vs. palette-only themes.
@@ -27,34 +27,12 @@ const COLOR_THEMES: Array<{ label: string; value: DeckTheme | "default" }> = [
   { label: "Crimson", value: "crimson" },
 ];
 
-// Other transmissions — Kris's music projects, presented as dial presets.
-const FREQUENCIES: Array<{
-  num: string;
-  name: string;
-  desc: string;
-  href?: string;
-}> = [
-  {
-    num: "88.1",
-    name: "BOTH HANDS FULL",
-    desc: "The record — plus the Too Weird to Die album.",
-    href: "https://bothhandsfull.com",
-  },
-  {
-    num: "92.3",
-    name: "ETHOS BLOCK PARTY",
-    desc: "Song booth — make a track, join the party.",
-    href: "https://ethosblockparty.com",
-  },
-  {
-    num: "100.7",
-    name: "GORGEOUS GHOST",
-    desc: "The album — landing soon. (It's what's on the deck.)",
-  },
-];
-
 export function App() {
   const [theme, setTheme] = useState<DeckTheme | "default">("ghost");
+  // Which station the deck is tuned to. Default to the namesake.
+  const [stationId, setStationId] = useState("gorgeous-ghost");
+  const active =
+    STATIONS.find((s) => s.id === stationId) ?? STATIONS[STATIONS.length - 1];
 
   return (
     <main className="station">
@@ -75,11 +53,12 @@ export function App() {
       <section className="band">
         <h2 className="band-label">Now broadcasting</h2>
         <p className="now-hint">
-          The deck floats top-right — drag it anywhere, pop the EQ and the
-          visualizer, blow out the bass. Tonight's set:
+          Tuned to <b>{active.freq} · {active.name}</b> — tune another station
+          below. The deck floats top-right: drag it, pop the EQ and visualizer,
+          blow out the bass.
         </p>
         <ol className="setlist">
-          {gorgeousGhost.map((t) => (
+          {active.collection.map((t) => (
             <li key={t.id}>
               <span className="set-n">
                 {String(t.number).padStart(2, "0")}
@@ -112,10 +91,9 @@ export function App() {
             </optgroup>
           </select>
         </div>
-        {/* The deck is position:fixed — it floats over the whole page. The
-            Ghost skin now ships in the library (theme="ghost"), so no app-side
-            CSS/logo override is needed. */}
-        <PlayerProvider tracks={gorgeousGhost}>
+        {/* The deck is position:fixed — it floats over the whole page. Keying
+            by station id remounts the engine when you tune to a new album. */}
+        <PlayerProvider key={active.id} tracks={active.collection}>
           <WinampPlayer
             wordmarkText="GHOST RADIO"
             theme={theme === "default" ? undefined : theme}
@@ -146,28 +124,43 @@ export function App() {
         </div>
       </section>
 
-      {/* ---- other frequencies: link-out stations ---- */}
+      {/* ---- the dial: tune the deck to a station ---- */}
       <section className="band">
-        <h2 className="band-label">Other frequencies</h2>
-        <nav className="frequencies">
-          {FREQUENCIES.map((f) => (
-            <a
-              key={f.num}
-              className="freq"
-              href={f.href ?? "#"}
-              aria-disabled={f.href ? undefined : "true"}
-              target={f.href ? "_blank" : undefined}
-              rel={f.href ? "noreferrer" : undefined}
-            >
-              <span className="freq-num">{f.num}</span>
-              <span>
-                <span className="freq-name">{f.name}</span>
-                <span className="freq-desc">{f.desc}</span>
-              </span>
-              <span className="freq-go">{f.href ? "tune in →" : "soon"}</span>
-            </a>
-          ))}
-        </nav>
+        <h2 className="band-label">The dial · tune the deck</h2>
+        <ul className="frequencies">
+          {STATIONS.map((s) => {
+            const tuned = s.id === active.id;
+            return (
+              <li key={s.id} className={`freq${tuned ? " is-tuned" : ""}`}>
+                <button
+                  type="button"
+                  className="freq-tune"
+                  aria-pressed={tuned}
+                  onClick={() => setStationId(s.id)}
+                >
+                  <span className="freq-num">{s.freq}</span>
+                  <span>
+                    <span className="freq-name">{s.name}</span>
+                    <span className="freq-desc">
+                      {s.desc} · {s.collection.length} tracks
+                    </span>
+                  </span>
+                  <span className="freq-go">{tuned ? "▶ tuned" : "tune ▸"}</span>
+                </button>
+                {s.href && (
+                  <a
+                    className="freq-site"
+                    href={s.href}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    site ↗
+                  </a>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </section>
 
       {/* ---- classic-skin showcase: the real .wsz engine ---- */}
