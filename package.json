@@ -31,7 +31,8 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./styles.css": "./dist/styles.css"
+    "./styles.css": "./dist/styles.css",
+    "./skins.css": "./dist/skins.css"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -41,7 +42,7 @@
   ],
   "scripts": {
     "dev": "tsup --watch",
-    "build": "tsup && cp src/styles.css dist/styles.css && node scripts/add-use-client.mjs",
+    "build": "tsup && cp src/styles.css dist/styles.css && cp src/skins.css dist/skins.css && node scripts/add-use-client.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",

@@ -206,7 +206,7 @@ const GHOST_MARK =
 // Keyed off --deck-accent so each skin tints its own glow/fog. VT323 renders
 // pixel-perfect where it's loaded (e.g. the hub), monospace otherwise.
 const CRT: Record<string, string> = {
-  "--deck-display-font": '"VT323", ui-monospace, monospace',
+  "--deck-display-font": '"DeckPixel", "VT323", ui-monospace, monospace',
   "--deck-time-size": "1.1rem",
   "--deck-marquee-size": "0.78rem",
   "--deck-scanlines": "0.5",

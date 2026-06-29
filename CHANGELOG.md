@@ -13,7 +13,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   opt-in `--deck-*` CSS hooks (palette themes render unchanged). Three ship:
   `ghost` (bobbing logo + violet bloom + cyan readout), `terminal` (green
   phosphor), and `crt-amber`. `ThemePack` gains optional `markSrc`; new
-  `ColorTheme` / `GraphicSkin` types alongside `DeckTheme`.
+  `ColorTheme` / `GraphicSkin` types alongside `DeckTheme`. Optional
+  `@walkswithaswagger/winamp/skins.css` bundles the pixel-LCD font (VT323 latin
+  subset, embedded data-URI, OFL — see NOTICE), kept out of `styles.css` so
+  palette-only consumers pay nothing.
 - Three more modern-deck theme packs — `sunset`, `ice`, `crimson` (7 total).
 - Window-shade for the classic **EQ** and **playlist** windows (double-click the
   title bar); all three classic windows now shade, persisted per window.

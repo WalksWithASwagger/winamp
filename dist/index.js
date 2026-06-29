@@ -669,7 +669,7 @@ var COLOR_THEMES = {
 };
 var GHOST_MARK = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjgiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAyOCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgPHBhdGgKICAgIGQ9Ik0xNCAyQzguNDggMiA0IDYuNDggNCAxMnYxNGMwIDEuMjUgMS40NSAxLjk1IDIuNDMgMS4xN0w4IDI2Yy41Ny0uNDUgMS4zOC0uNDIgMS45MS4wOGwxLjQgMS4zMmMuNTUuNTIgMS40Mi41MiAxLjk3IDBsMS40LTEuMzJjLjUzLS41IDEuMzQtLjUzIDEuOTEtLjA4bDEuNTcgMS4xN0MyMC41NSAyNy45NSAyMiAyNy4yNSAyMiAyNlYxMmMwLTUuNTItNC40OC0xMC04LTEwWiIKICAgIGZpbGw9IiNiNDljZmYiCiAgLz4KICA8ZWxsaXBzZSBjeD0iMTAuNiIgY3k9IjEzIiByeD0iMS43IiByeT0iMi4zIiBmaWxsPSIjMWExMDMwIiAvPgogIDxlbGxpcHNlIGN4PSIxNy40IiBjeT0iMTMiIHJ4PSIxLjciIHJ5PSIyLjMiIGZpbGw9IiMxYTEwMzAiIC8+Cjwvc3ZnPgo=";
 var CRT = {
-  "--deck-display-font": '"VT323", ui-monospace, monospace',
+  "--deck-display-font": '"DeckPixel", "VT323", ui-monospace, monospace',
   "--deck-time-size": "1.1rem",
   "--deck-marquee-size": "0.78rem",
   "--deck-scanlines": "0.5",

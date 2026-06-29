@@ -25,6 +25,9 @@ friendly.
   picker (next / prev / shuffle).
 - 🎨 **Theme packs** — `green` / `vaporwave` / `mono` / `amber` / `sunset` / `ice` / `crimson`, or your own CSS
   tokens.
+- 👻 **Graphic skins** — `ghost` / `terminal` / `crt-amber`: imagery, a pixel-LCD
+  font, CRT scanlines, and glow on top of a palette. Add
+  `import "@walkswithaswagger/winamp/skins.css";` for the bundled pixel font.
 - ⌨️ **Keyboard shortcuts** + **MediaSession** (OS media keys & lock-screen
   metadata).
 - 🪟 **Classic `.wsz` skins** — pixel-faithful main / EQ / playlist windows from

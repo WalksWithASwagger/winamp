@@ -4,3 +4,8 @@ This product includes sprite-coordinate data ported from Webamp
 (https://github.com/captbaritone/webamp), Copyright (c) Jordan Eldredge,
 licensed under the MIT License. The classic-skin sprite coordinates in
 src/classic/skinSprites.ts are derived from Webamp's js/skinSprites.ts.
+
+This product embeds a latin subset of the VT323 font, Copyright (c) The VT323
+Project Authors (Peter Hull), licensed under the SIL Open Font License, Version
+1.1 (https://openfontlicense.org). The font is embedded as a data-URI in
+dist/skins.css (an optional import) and is not sold separately.

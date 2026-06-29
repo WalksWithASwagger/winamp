@@ -5,6 +5,7 @@ import {
   type DeckTheme,
 } from "@walkswithaswagger/winamp";
 import "@walkswithaswagger/winamp/styles.css";
+import "@walkswithaswagger/winamp/skins.css";
 import "./hub.css";
 import { gorgeousGhost } from "./tracks";
 import { ClassicSkinDemo } from "./ClassicSkinDemo";
