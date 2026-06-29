@@ -8,6 +8,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Graphic deck skins** — the modern-deck `theme` system now carries imagery, a
+  pixel-LCD display font, CRT scanlines, atmosphere fog, and tunable glow via new
+  opt-in `--deck-*` CSS hooks (palette themes render unchanged). Three ship:
+  `ghost` (bobbing logo + violet bloom + cyan readout), `terminal` (green
+  phosphor), and `crt-amber`. `ThemePack` gains optional `markSrc`; new
+  `ColorTheme` / `GraphicSkin` types alongside `DeckTheme`.
 - Three more modern-deck theme packs — `sunset`, `ice`, `crimson` (7 total).
 - Window-shade for the classic **EQ** and **playlist** windows (double-click the
   title bar); all three classic windows now shade, persisted per window.
@@ -24,10 +30,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   playground (Netlify-hosted; Vercel can't take `*.radio.fm` because `radio.fm` isn't on
   the Public Suffix List). Floating deck + setlist, project/GitHub blurb, dial-preset links
   to other releases, and the classic `.wsz` booth.
-- **Ghost graphic deck skin** (hub-only, app-level) — a real *graphic* skin on the modern
-  deck, beyond color tokens: ghost logo (`wordmarkSrc`), VT323 pixel-LCD readout, CRT
-  scanlines, and a violet aura that harmonizes with the selected theme's `--deck-accent`.
-  Productionizing this asset layer into the library is on the roadmap.
+- The hub defaults to the **`ghost`** deck skin and ships a grouped skin / color-theme
+  picker (loads VT323 so the pixel-LCD readout renders crisp).
 - Default **Gorgeous Ghost** collection with real audio + cover art (extracted
   from the tracks) driving artwork + per-track deck tinting.
 

@@ -112,6 +112,8 @@ export function WinampPlayer({
 } = {}) {
   const themePack = theme ? THEMES[theme] : undefined;
   const spectrum = spectrumColors ?? themePack?.spectrum ?? DEFAULT_SPECTRUM_COLORS;
+  // An explicit prop wins; otherwise a graphic skin can supply its own logo.
+  const markSrc = wordmarkSrc ?? themePack?.markSrc;
   const {
     allTracks,
     currentId,
@@ -328,10 +330,10 @@ export function WinampPlayer({
           onPointerDown={startDrag}
           onDoubleClick={onBarDoubleClick}
         >
-        {wordmarkSrc && (
+        {markSrc && (
           <img
             className="deck-mark-img"
-            src={wordmarkSrc}
+            src={markSrc}
             alt=""
             aria-hidden="true"
           />

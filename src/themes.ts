@@ -2,7 +2,8 @@
 // (defined in styles.css) and a matching spectrum palette. Distinct from .wsz
 // classic skins — these reskin the modern <WinampPlayer />.
 
-export type DeckTheme =
+/** Palette-only themes — recolor the deck via `--wamp-*` tokens. */
+export type ColorTheme =
   | "green"
   | "vaporwave"
   | "mono"
@@ -11,14 +12,22 @@ export type DeckTheme =
   | "ice"
   | "crimson";
 
+/** Graphic skins — a palette plus imagery, pixel font, scanlines, and glow. */
+export type GraphicSkin = "ghost" | "terminal" | "crt-amber";
+
+/** Anything the deck `theme` prop accepts. */
+export type DeckTheme = ColorTheme | GraphicSkin;
+
 export type ThemePack = {
   /** CSS custom-property overrides applied to the deck root. */
   vars: Record<string, string>;
   /** Spectrum analyzer bar colors. */
   spectrum: string[];
+  /** Optional title-bar logo (data-URI or URL) — graphic skins ship one. */
+  markSrc?: string;
 };
 
-export const THEMES: Record<DeckTheme, ThemePack> = {
+const COLOR_THEMES = {
   green: {
     vars: {
       "--deck-accent": "#27c93f",
@@ -186,5 +195,53 @@ export const THEMES: Record<DeckTheme, ThemePack> = {
       "--wamp-edge-top": "#5a2730",
     },
     spectrum: ["#ff3b4e", "#ff7a86", "#ffae5c", "#e0344a", "#ff5e6e"],
+  },
+} satisfies Record<ColorTheme, ThemePack>;
+
+// Spectral ghost logo, inlined so the skin ships self-contained (no asset file).
+const GHOST_MARK =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjgiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAyOCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgPHBhdGgKICAgIGQ9Ik0xNCAyQzguNDggMiA0IDYuNDggNCAxMnYxNGMwIDEuMjUgMS40NSAxLjk1IDIuNDMgMS4xN0w4IDI2Yy41Ny0uNDUgMS4zOC0uNDIgMS45MS4wOGwxLjQgMS4zMmMuNTUuNTIgMS40Mi41MiAxLjk3IDBsMS40LTEuMzJjLjUzLS41IDEuMzQtLjUzIDEuOTEtLjA4bDEuNTcgMS4xN0MyMC41NSAyNy45NSAyMiAyNy4yNSAyMiAyNlYxMmMwLTUuNTItNC40OC0xMC04LTEwWiIKICAgIGZpbGw9IiNiNDljZmYiCiAgLz4KICA8ZWxsaXBzZSBjeD0iMTAuNiIgY3k9IjEzIiByeD0iMS43IiByeT0iMi4zIiBmaWxsPSIjMWExMDMwIiAvPgogIDxlbGxpcHNlIGN4PSIxNy40IiBjeT0iMTMiIHJ4PSIxLjciIHJ5PSIyLjMiIGZpbGw9IiMxYTEwMzAiIC8+Cjwvc3ZnPgo=";
+
+// Shared CRT treatment for graphic skins — pixel font + scanlines + bloom.
+// Keyed off --deck-accent so each skin tints its own glow/fog. VT323 renders
+// pixel-perfect where it's loaded (e.g. the hub), monospace otherwise.
+const CRT: Record<string, string> = {
+  "--deck-display-font": '"VT323", ui-monospace, monospace',
+  "--deck-time-size": "1.1rem",
+  "--deck-marquee-size": "0.78rem",
+  "--deck-scanlines": "0.5",
+  "--deck-glow": "0 0 32px -8px color-mix(in srgb, var(--deck-accent) 72%, transparent)",
+  "--deck-fog":
+    "radial-gradient(120% 80% at 50% -10%, color-mix(in srgb, var(--deck-accent) 24%, transparent), transparent 62%)",
+};
+
+export const THEMES: Record<DeckTheme, ThemePack> = {
+  ...COLOR_THEMES,
+  // Ghost — flagship graphic skin: violet bloom, bobbing ghost logo,
+  // pixel-LCD readout, scanlines. Built on the vaporwave palette.
+  ghost: {
+    vars: {
+      ...COLOR_THEMES.vaporwave.vars,
+      ...CRT,
+      "--deck-fog":
+        "radial-gradient(120% 80% at 50% -10%, color-mix(in srgb, var(--deck-accent) 30%, transparent), transparent 60%), radial-gradient(100% 70% at 50% 120%, rgba(0,0,0,0.5), transparent 55%)",
+      "--deck-mark-w": "17px",
+      "--deck-mark-h": "18px",
+      "--deck-mark-filter":
+        "drop-shadow(0 0 4px color-mix(in srgb, var(--deck-accent) 75%, transparent))",
+      "--deck-mark-anim": "deck-ghost-bob 3.2s ease-in-out infinite",
+    },
+    spectrum: COLOR_THEMES.vaporwave.spectrum,
+    markSrc: GHOST_MARK,
+  },
+  // Terminal — green phosphor CRT.
+  terminal: {
+    vars: { ...COLOR_THEMES.green.vars, ...CRT },
+    spectrum: COLOR_THEMES.green.spectrum,
+  },
+  // CRT Amber — amber monochrome monitor.
+  "crt-amber": {
+    vars: { ...COLOR_THEMES.amber.vars, ...CRT },
+    spectrum: COLOR_THEMES.amber.spectrum,
   },
 };

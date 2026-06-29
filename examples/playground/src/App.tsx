@@ -9,10 +9,16 @@ import "./hub.css";
 import { gorgeousGhost } from "./tracks";
 import { ClassicSkinDemo } from "./ClassicSkinDemo";
 
-const SKINS: Array<{ label: string; value: DeckTheme | "default" }> = [
-  { label: "Ghost", value: "vaporwave" },
+// Graphic skins (imagery + pixel font + scanlines) vs. palette-only themes.
+const GRAPHIC_SKINS: Array<{ label: string; value: DeckTheme }> = [
+  { label: "Ghost", value: "ghost" },
+  { label: "Terminal", value: "terminal" },
+  { label: "CRT Amber", value: "crt-amber" },
+];
+const COLOR_THEMES: Array<{ label: string; value: DeckTheme | "default" }> = [
   { label: "Default", value: "default" },
   { label: "Green", value: "green" },
+  { label: "Vaporwave", value: "vaporwave" },
   { label: "Mono", value: "mono" },
   { label: "Amber", value: "amber" },
   { label: "Sunset", value: "sunset" },
@@ -47,7 +53,7 @@ const FREQUENCIES: Array<{
 ];
 
 export function App() {
-  const [theme, setTheme] = useState<DeckTheme | "default">("vaporwave");
+  const [theme, setTheme] = useState<DeckTheme | "default">("ghost");
 
   return (
     <main className="station">
@@ -89,25 +95,31 @@ export function App() {
             value={theme}
             onChange={(e) => setTheme(e.target.value as DeckTheme | "default")}
           >
-            {SKINS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
+            <optgroup label="Skins">
+              {GRAPHIC_SKINS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Color themes">
+              {COLOR_THEMES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </optgroup>
           </select>
         </div>
-        {/* The deck is position:fixed — it floats over the whole page.
-            .deck-ghost-scope wraps it so the graphic-skin CSS (hub.css) is
-            scoped to this deck and leaves the classic booth untouched. */}
-        <div className="deck-ghost-scope">
-          <PlayerProvider tracks={gorgeousGhost}>
-            <WinampPlayer
-              wordmarkText="GHOST RADIO"
-              wordmarkSrc="/art/ghost-mark.svg"
-              theme={theme === "default" ? undefined : theme}
-            />
-          </PlayerProvider>
-        </div>
+        {/* The deck is position:fixed — it floats over the whole page. The
+            Ghost skin now ships in the library (theme="ghost"), so no app-side
+            CSS/logo override is needed. */}
+        <PlayerProvider tracks={gorgeousGhost}>
+          <WinampPlayer
+            wordmarkText="GHOST RADIO"
+            theme={theme === "default" ? undefined : theme}
+          />
+        </PlayerProvider>
       </section>
 
       {/* ---- transmission log: about the player ---- */}

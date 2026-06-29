@@ -61,12 +61,19 @@ declare function PlayerProvider({ tracks, onNowPlaying, children, }: {
     children: ReactNode;
 }): react.JSX.Element;
 
-type DeckTheme = "green" | "vaporwave" | "mono" | "amber" | "sunset" | "ice" | "crimson";
+/** Palette-only themes — recolor the deck via `--wamp-*` tokens. */
+type ColorTheme = "green" | "vaporwave" | "mono" | "amber" | "sunset" | "ice" | "crimson";
+/** Graphic skins — a palette plus imagery, pixel font, scanlines, and glow. */
+type GraphicSkin = "ghost" | "terminal" | "crt-amber";
+/** Anything the deck `theme` prop accepts. */
+type DeckTheme = ColorTheme | GraphicSkin;
 type ThemePack = {
     /** CSS custom-property overrides applied to the deck root. */
     vars: Record<string, string>;
     /** Spectrum analyzer bar colors. */
     spectrum: string[];
+    /** Optional title-bar logo (data-URI or URL) — graphic skins ship one. */
+    markSrc?: string;
 };
 declare const THEMES: Record<DeckTheme, ThemePack>;
 

@@ -28,6 +28,18 @@
   --wamp-lcd-1: #06090a;
   --wamp-lcd-2: #020303;
   --wamp-edge-top: #565a64;
+  /* Graphic-skin hooks — defaults reproduce the color-only look, so the
+     palette themes are unchanged. Graphic skins (e.g. `ghost`) flip these on. */
+  --deck-display-font: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
+  --deck-time-size: 0.86rem;
+  --deck-marquee-size: 0.55rem;
+  --deck-fog: none;
+  --deck-scanlines: 0;
+  --deck-glow: 0 0 22px -9px color-mix(in srgb, var(--deck-accent) 55%, transparent);
+  --deck-mark-w: 13px;
+  --deck-mark-h: 13px;
+  --deck-mark-filter: none;
+  --deck-mark-anim: none;
   position: fixed;
   top: 0.75rem; right: 0.75rem;
   z-index: 30;
@@ -45,9 +57,21 @@
   box-shadow:
     0 10px 30px -8px #000,
     0 0 0 1px #000,
-    0 0 22px -9px color-mix(in srgb, var(--deck-accent) 55%, transparent);
+    var(--deck-glow);
   overflow: hidden;
   transition: width 0.26s ease, box-shadow 0.26s ease;
+}
+
+/* Optional atmosphere layer (fog/bloom). Painted above the base gradient but
+   behind the controls; invisible until a skin sets --deck-fog. */
+.deck::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: var(--deck-fog, none);
 }
 
 /* title bar — bright brushed strip with an embossed wordmark */
@@ -78,6 +102,7 @@
 
 /* LCD strip: time · spectrum · kbps · scrolling title */
 .deck-lcd {
+  position: relative;
   display: flex; align-items: center; gap: 0.34rem;
   margin: 0.3rem; padding: 0.22rem 0.34rem;
   background: linear-gradient(180deg, var(--wamp-lcd-1), var(--wamp-lcd-2));
@@ -85,8 +110,16 @@
   box-shadow: inset 0 1px 4px #000, inset 0 0 0 1px rgba(109,202,208,0.06);
   overflow: hidden;
 }
+/* CRT scanlines — invisible until a skin sets --deck-scanlines opacity. */
+.deck-lcd::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  opacity: var(--deck-scanlines, 0);
+  background: repeating-linear-gradient(
+    to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 1px, rgba(0,0,0,0.28) 2px);
+}
 .deck-time {
-  font-size: 0.86rem; font-weight: 700; letter-spacing: 0.02em;
+  font-family: var(--deck-display-font);
+  font-size: var(--deck-time-size); font-weight: 700; letter-spacing: 0.02em;
   color: var(--wamp-cyan, #6dcad0);
   text-shadow: 0 0 7px color-mix(in srgb, var(--wamp-cyan, #6dcad0) 70%, transparent);
   font-variant-numeric: tabular-nums;
@@ -100,7 +133,8 @@
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
 .deck-marquee-text {
-  display: inline-block; font-size: 0.55rem; letter-spacing: 0.05em;
+  display: inline-block; font-family: var(--deck-display-font);
+  font-size: var(--deck-marquee-size); letter-spacing: 0.05em;
   color: var(--deck-accent);
   text-shadow: 0 0 6px color-mix(in srgb, var(--deck-accent) 50%, transparent);
 }
@@ -216,11 +250,17 @@
   .deck-list { max-height: 38vh; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .deck-marquee-text.run, .deck-eq i, .deck-list, .deck-eq-panel, .deck-key-play.is-pulsing { animation: none; }
+  .deck-marquee-text.run, .deck-eq i, .deck-list, .deck-eq-panel, .deck-key-play.is-pulsing, .deck-mark-img { animation: none; }
 }
 
 /* Deck imagery — mask mark, current cover, playlist row thumbnails */
-.deck-mark-img { width: 13px; height: 13px; display: block; flex: none; }
+.deck-mark-img {
+  width: var(--deck-mark-w, 13px); height: var(--deck-mark-h, 13px);
+  display: block; flex: none;
+  filter: var(--deck-mark-filter, none);
+  animation: var(--deck-mark-anim, none);
+}
+@keyframes deck-ghost-bob { 50% { transform: translateY(-1.5px); } }
 .deck-cover {
   width: 26px; height: 26px; flex: none;
   border-radius: 3px; object-fit: cover;

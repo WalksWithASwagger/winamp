@@ -497,7 +497,7 @@ function Visualizer({ onClose }) {
 }
 
 // src/themes.ts
-var THEMES = {
+var COLOR_THEMES = {
   green: {
     vars: {
       "--deck-accent": "#27c93f",
@@ -667,6 +667,43 @@ var THEMES = {
     spectrum: ["#ff3b4e", "#ff7a86", "#ffae5c", "#e0344a", "#ff5e6e"]
   }
 };
+var GHOST_MARK = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjgiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAyOCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBhcmlhLWhpZGRlbj0idHJ1ZSI+CiAgPHBhdGgKICAgIGQ9Ik0xNCAyQzguNDggMiA0IDYuNDggNCAxMnYxNGMwIDEuMjUgMS40NSAxLjk1IDIuNDMgMS4xN0w4IDI2Yy41Ny0uNDUgMS4zOC0uNDIgMS45MS4wOGwxLjQgMS4zMmMuNTUuNTIgMS40Mi41MiAxLjk3IDBsMS40LTEuMzJjLjUzLS41IDEuMzQtLjUzIDEuOTEtLjA4bDEuNTcgMS4xN0MyMC41NSAyNy45NSAyMiAyNy4yNSAyMiAyNlYxMmMwLTUuNTItNC40OC0xMC04LTEwWiIKICAgIGZpbGw9IiNiNDljZmYiCiAgLz4KICA8ZWxsaXBzZSBjeD0iMTAuNiIgY3k9IjEzIiByeD0iMS43IiByeT0iMi4zIiBmaWxsPSIjMWExMDMwIiAvPgogIDxlbGxpcHNlIGN4PSIxNy40IiBjeT0iMTMiIHJ4PSIxLjciIHJ5PSIyLjMiIGZpbGw9IiMxYTEwMzAiIC8+Cjwvc3ZnPgo=";
+var CRT = {
+  "--deck-display-font": '"VT323", ui-monospace, monospace',
+  "--deck-time-size": "1.1rem",
+  "--deck-marquee-size": "0.78rem",
+  "--deck-scanlines": "0.5",
+  "--deck-glow": "0 0 32px -8px color-mix(in srgb, var(--deck-accent) 72%, transparent)",
+  "--deck-fog": "radial-gradient(120% 80% at 50% -10%, color-mix(in srgb, var(--deck-accent) 24%, transparent), transparent 62%)"
+};
+var THEMES = {
+  ...COLOR_THEMES,
+  // Ghost — flagship graphic skin: violet bloom, bobbing ghost logo,
+  // pixel-LCD readout, scanlines. Built on the vaporwave palette.
+  ghost: {
+    vars: {
+      ...COLOR_THEMES.vaporwave.vars,
+      ...CRT,
+      "--deck-fog": "radial-gradient(120% 80% at 50% -10%, color-mix(in srgb, var(--deck-accent) 30%, transparent), transparent 60%), radial-gradient(100% 70% at 50% 120%, rgba(0,0,0,0.5), transparent 55%)",
+      "--deck-mark-w": "17px",
+      "--deck-mark-h": "18px",
+      "--deck-mark-filter": "drop-shadow(0 0 4px color-mix(in srgb, var(--deck-accent) 75%, transparent))",
+      "--deck-mark-anim": "deck-ghost-bob 3.2s ease-in-out infinite"
+    },
+    spectrum: COLOR_THEMES.vaporwave.spectrum,
+    markSrc: GHOST_MARK
+  },
+  // Terminal — green phosphor CRT.
+  terminal: {
+    vars: { ...COLOR_THEMES.green.vars, ...CRT },
+    spectrum: COLOR_THEMES.green.spectrum
+  },
+  // CRT Amber — amber monochrome monitor.
+  "crt-amber": {
+    vars: { ...COLOR_THEMES.amber.vars, ...CRT },
+    spectrum: COLOR_THEMES.amber.spectrum
+  }
+};
 function usePlayerKeyboardShortcuts(options = {}) {
   const { enabled = true, seekStep = 5, volumeStep = 0.05 } = options;
   const { toggle, currentId, time, duration, volume, seek, setVolume } = usePlayer();
@@ -779,6 +816,7 @@ function WinampPlayer({
 } = {}) {
   const themePack = theme ? THEMES[theme] : void 0;
   const spectrum = spectrumColors ?? themePack?.spectrum ?? DEFAULT_SPECTRUM_COLORS;
+  const markSrc = wordmarkSrc ?? themePack?.markSrc;
   const {
     allTracks,
     currentId,
@@ -974,11 +1012,11 @@ function WinampPlayer({
               onPointerDown: startDrag,
               onDoubleClick: onBarDoubleClick,
               children: [
-                wordmarkSrc && /* @__PURE__ */ jsx(
+                markSrc && /* @__PURE__ */ jsx(
                   "img",
                   {
                     className: "deck-mark-img",
-                    src: wordmarkSrc,
+                    src: markSrc,
                     alt: "",
                     "aria-hidden": "true"
                   }
