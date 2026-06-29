@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-28
+
 ### Added
 
 - **Graphic deck skins** — the modern-deck `theme` system now carries imagery, a
@@ -78,6 +80,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Butterchurn visualizer. Draggable, token-themed Winamp-style deck with a
   10-band Web Audio EQ, spectrum analyzer, playlist, windowshade, and 2× scale.
 
-[Unreleased]: https://github.com/WalksWithASwagger/winamp/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/WalksWithASwagger/winamp/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/WalksWithASwagger/winamp/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/WalksWithASwagger/winamp/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/WalksWithASwagger/winamp/releases/tag/v0.1.0
