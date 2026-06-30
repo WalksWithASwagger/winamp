@@ -60,9 +60,6 @@ importers:
       '@walkswithaswagger/winamp':
         specifier: workspace:*
         version: link:../..
-      fflate:
-        specifier: ^0.8.3
-        version: 0.8.3
       react:
         specifier: ^19
         version: 19.2.7

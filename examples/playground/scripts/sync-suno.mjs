@@ -53,15 +53,17 @@ async function fetchClips(id) {
 }
 
 function emitTrack(c, i, p) {
-  const bpm = bpmFrom((c.metadata || {}).tags);
+  // PlayerTrack.bpm is required (drives the play-button pulse); default to a
+  // neutral 100 when Suno's tags don't state one.
+  const bpm = bpmFrom((c.metadata || {}).tags) ?? 100;
   const lines = [
     "  {",
     `    id: ${J(c.id)},`,
     `    number: ${i + 1},`,
     `    title: ${J(p.cleanTitle(c.title))},`,
     `    person: ${J(p.person(c.title))},`,
+    `    bpm: ${bpm},`,
   ];
-  if (bpm) lines.push(`    bpm: ${bpm},`);
   lines.push(`    audioUrl: ${J(c.audio_url)},`);
   if (c.image_url) lines.push(`    coverImage: ${J(c.image_url)},`);
   lines.push(`    art: { palette: [${J(p.accent)}] },`, "  },");

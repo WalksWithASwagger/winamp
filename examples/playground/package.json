@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "@walkswithaswagger/winamp": "workspace:*",
-    "fflate": "^0.8.3",
     "react": "^19",
     "react-dom": "^19"
   },
