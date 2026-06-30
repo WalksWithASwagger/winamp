@@ -155,6 +155,7 @@ export function App() {
           skinnable deck.
         </span>
         <nav className="bb-links">
+          <a href="/classic">Classic ↗</a>
           <a href="https://github.com/WalksWithASwagger/winamp">GitHub</a>
           <a href="https://www.npmjs.com/package/@walkswithaswagger/winamp">
             npm

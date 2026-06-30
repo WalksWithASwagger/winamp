@@ -1,0 +1,73 @@
+/* Standalone /classic page — the .wsz booth on its own, off the one-screen hub.
+   Self-contained (own tokens + scrollable layout); does NOT pull hub.css so the
+   hub's 100vh/overflow:hidden constraints don't apply here. */
+
+:root {
+  --void: #0b0a0d;
+  --void-2: #121016;
+  --bone: #d8d2c4;
+  --bone-dim: #8e887b;
+  --ghost: #b49cff;
+  --ghost-deep: #6f5bb0;
+  --rule: #221d2e;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; background: var(--void); }
+body {
+  color: var(--bone);
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* CRT scanline overlay — match the hub's texture. */
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: 50; pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.22) 3px);
+  mix-blend-mode: multiply; opacity: 0.5;
+}
+
+.classic-page {
+  position: relative; z-index: 1;
+  max-width: 760px; margin: 0 auto;
+  padding: clamp(1.25rem, 4vw, 3rem) clamp(1.25rem, 4vw, 3rem) 4rem;
+}
+
+.cp-top {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+  border-bottom: 1px solid var(--rule); padding-bottom: 0.75rem;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--bone-dim);
+}
+.cp-back { color: var(--ghost); text-decoration: none; border-bottom: 1px solid var(--ghost-deep); white-space: nowrap; }
+.cp-back:hover { background: rgba(180, 156, 255, 0.12); }
+
+.cp-title {
+  font-family: "VT323", ui-monospace, monospace; font-weight: 400; line-height: 0.85;
+  font-size: clamp(2.6rem, 9vw, 5rem); margin: clamp(1rem, 3vw, 2rem) 0 0.6rem;
+  color: var(--bone); text-shadow: 0 0 18px rgba(180, 156, 255, 0.25);
+}
+.cp-title b { color: var(--ghost); font-weight: 400; }
+
+.cp-intro {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.85rem; color: var(--bone-dim); line-height: 1.6; max-width: 62ch; margin: 0 0 1.75rem;
+}
+.cp-intro code { color: var(--bone); }
+.cp-intro a { color: var(--ghost); text-decoration: none; border-bottom: 1px solid var(--ghost-deep); }
+.cp-intro a:hover { background: rgba(180, 156, 255, 0.12); }
+
+/* framed booth around the classic windows */
+.cp-booth {
+  border: 1px solid var(--rule); border-top: 2px solid var(--ghost-deep);
+  border-radius: 4px; padding: clamp(1rem, 3vw, 1.75rem);
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(180,156,255,0.06), transparent 60%),
+    var(--void-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+}
