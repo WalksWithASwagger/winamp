@@ -47,6 +47,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "check:dist": "pnpm build && git diff --exit-code -- dist",
+    "check:package": "node scripts/check-package.mjs",
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
