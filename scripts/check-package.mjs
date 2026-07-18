@@ -36,6 +36,7 @@ export function requiredPackageFiles(packageJson) {
     const file = target.replace(/^\.\//, "");
     files.add(file);
     if (/\.(?:cjs|mjs|js)$/.test(file)) files.add(`${file}.map`);
+    if (file.endsWith(".cjs")) files.add(file.replace(/\.cjs$/, ".d.cts"));
   }
 
   return [...files].sort();

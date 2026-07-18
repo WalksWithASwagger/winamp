@@ -10,6 +10,7 @@ const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
 const completePackage = [
   "dist/index.cjs",
   "dist/index.cjs.map",
+  "dist/index.d.cts",
   "dist/index.d.ts",
   "dist/index.js",
   "dist/index.js.map",
@@ -30,6 +31,15 @@ describe("package integrity", () => {
     expect(missingPackageFiles(packageJson, withoutSkins)).toEqual(["dist/skins.css"]);
     expect(() => assertPackageIntegrity(packageJson, withoutSkins)).toThrow(
       "Package tarball is missing required files:\ndist/skins.css",
+    );
+  });
+
+  it("fails when the CommonJS declaration is missing", () => {
+    const withoutCommonJsTypes = completePackage.filter((file) => file !== "dist/index.d.cts");
+
+    expect(missingPackageFiles(packageJson, withoutCommonJsTypes)).toEqual(["dist/index.d.cts"]);
+    expect(() => assertPackageIntegrity(packageJson, withoutCommonJsTypes)).toThrow(
+      "Package tarball is missing required files:\ndist/index.d.cts",
     );
   });
 });
