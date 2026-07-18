@@ -27,3 +27,5 @@ jobs:
       # Rebuilds dist/ and fails if it drifts from what's committed,
       # keeping the git-installable prebuilt output honest.
       - run: pnpm check:dist
+
+      - run: pnpm check:package
