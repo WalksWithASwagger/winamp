@@ -48,6 +48,7 @@
     "test:run": "vitest run",
     "check:dist": "pnpm build && git diff --exit-code -- dist",
     "check:package": "node scripts/check-package.mjs",
+    "check:seo": "pnpm --filter playground build && node scripts/check-seo.mjs",
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
