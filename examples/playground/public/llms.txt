@@ -1,0 +1,13 @@
+# Ghost Radio
+
+> Ghost Radio is an audio lab for AI music, half-finished albums, and the open-source React package `@walkswithaswagger/winamp`.
+
+## Public pages
+
+- [Ghost Radio](https://ghost.radio.fm/): The modern audio deck and station tuner
+- [Classic Booth](https://ghost.radio.fm/classic): The classic Winamp-style skin showcase
+
+## Open source package
+
+- [GitHub repository](https://github.com/WalksWithASwagger/winamp)
+- [npm package](https://www.npmjs.com/package/@walkswithaswagger/winamp)
