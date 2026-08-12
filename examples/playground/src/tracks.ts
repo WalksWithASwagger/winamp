@@ -213,5 +213,5 @@ export type Station = {
 export const STATIONS: Station[] = [
   { id: "too-weird", freq: "88.1", name: "BOTH HANDS FULL", desc: "Too Weird to Die — the record.", collection: tooWeirdToDie, href: "https://bothhandsfull.com" },
   { id: "ethos", freq: "92.3", name: "ETHOS BLOCK PARTY", desc: "Ethọ́s Lab Block Party 2026.", collection: ethosBlockParty, href: "https://ethosblockparty.com" },
-  { id: "gorgeous-ghost", freq: "100.7", name: "GORGEOUS GHOST", desc: "The album — live on the deck.", collection: gorgeousGhost },
+  { id: "gorgeous-ghost", freq: "100.7", name: "GORGEOUS GHOST", desc: "The album — live on the deck.", collection: gorgeousGhost, href: "https://gorgeousghost.com" },
 ];
