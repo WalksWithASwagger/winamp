@@ -225,6 +225,9 @@ body {
 .bb-links { display: inline-flex; align-items: center; gap: 1rem; }
 .bb-links a { color: var(--bone); text-decoration: none; border-bottom: 1px solid var(--rule); }
 .bb-links a:hover { color: var(--ghost); border-color: var(--ghost-deep); }
+.bb-network { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem 1rem; color: var(--bone-dim); }
+.bb-network a { color: var(--bone); text-decoration: none; border-bottom: 1px solid var(--rule); }
+.bb-network a:hover { color: var(--ghost); border-color: var(--ghost-deep); }
 .bb-copy { color: var(--bone-dim); }
 
 /* ---- mobile: one-screen is a desktop promise; phones get a tidy scroll ---- */
