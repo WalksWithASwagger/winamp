@@ -48,11 +48,22 @@ describe("usePlayerKeyboardShortcuts", () => {
     expect(h.api.volume).toBeCloseTo(0.85);
   });
 
-  it("ignores keys while a form field is focused", () => {
+  it("ignores keys while a form field or button is focused", () => {
     const h = mount();
-    const input = document.createElement("input");
-    document.body.appendChild(input);
-    key("ArrowDown", input);
-    expect(h.api.volume).toBeCloseTo(0.85);
+    const fields: HTMLElement[] = [
+      document.createElement("input"),
+      document.createElement("select"),
+      document.createElement("textarea"),
+      document.createElement("button"),
+    ];
+    const editable = document.createElement("div");
+    editable.contentEditable = "true";
+    Object.defineProperty(editable, "isContentEditable", { value: true });
+    fields.push(editable);
+    fields.forEach((field) => {
+      document.body.appendChild(field);
+      key("ArrowDown", field);
+      expect(h.api.volume, field.tagName).toBeCloseTo(0.85);
+    });
   });
 });

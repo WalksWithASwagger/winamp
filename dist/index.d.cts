@@ -176,11 +176,15 @@ declare function Sprite({ name, style, }: {
  * A button that shows its `up` sprite normally and `down` while pressed.
  * Sized from the `up` sprite.
  */
-declare function SpriteButton({ up, down, onClick, title, style, }: {
+declare function SpriteButton({ up, down, onClick, title, ariaLabel, ariaPressed, ariaExpanded, ariaControls, style, }: {
     up: SpriteName;
     down: SpriteName;
     onClick?: () => void;
     title?: string;
+    ariaLabel?: string;
+    ariaPressed?: boolean;
+    ariaExpanded?: boolean;
+    ariaControls?: string;
     style?: CSSProperties;
 }): react.JSX.Element;
 
@@ -192,12 +196,18 @@ declare function SpriteButton({ up, down, onClick, title, style, }: {
  * level-variants; pass `frames`/`frameHeight` to window into the right one for
  * the current value. Single-frame tracks (e.g. POSBAR) omit them.
  */
-declare function Slider({ background, thumb, thumbActive, value, onChange, trackWidth, trackHeight, frames, frameHeight, vertical, style, }: {
+declare function Slider({ background, thumb, thumbActive, value, onChange, ariaLabel, ariaValueMin, ariaValueMax, ariaValueNow, ariaValueText, keyboardStep, trackWidth, trackHeight, frames, frameHeight, vertical, style, }: {
     background?: SpriteName;
     thumb: SpriteName;
     thumbActive?: SpriteName;
     value: number;
     onChange?: (value: number) => void;
+    ariaLabel?: string;
+    ariaValueMin?: number;
+    ariaValueMax?: number;
+    ariaValueNow?: number;
+    ariaValueText?: string;
+    keyboardStep?: number;
     trackWidth: number;
     trackHeight: number;
     frames?: number;

@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, useEffect, useRef } from "react";
+import { type CSSProperties, type KeyboardEvent, useEffect, useRef } from "react";
 import { EQ_BANDS, EQ_MAX_DB, usePlayer } from "../PlayerProvider";
 import { useSkin } from "./useSkin";
 import { SkinProvider, useSkinContext } from "./SkinContext";
@@ -49,6 +49,8 @@ function EqGraph({ gains, preamp }: { gains: number[]; preamp: number }) {
       ref={ref}
       width={113}
       height={19}
+      role="img"
+      aria-label="Equalizer curve"
       style={{ ...placed(86, 17), width: 113, height: 19, imageRendering: "pixelated" }}
     />
   );
@@ -79,6 +81,15 @@ export function ClassicEqWindow({
   const shadeToggle = (
     <div
       onDoubleClick={() => setShade(!shade)}
+      onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        setShade(!shade);
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label="Toggle windowshade"
+      aria-pressed={shade}
       title="Double-click to toggle windowshade"
       style={{ position: "absolute", left: 0, top: 0, width: W - 11, height: SHADE_H, cursor: "pointer" }}
     />
@@ -86,7 +97,14 @@ export function ClassicEqWindow({
 
   return (
     <SkinProvider skin={skin}>
-      <div data-eq-status={status} data-shade={shade ? "true" : "false"} style={{ width: W * scale, height: height * scale }}>
+      <div
+        data-eq-status={status}
+        data-shade={shade ? "true" : "false"}
+        role="region"
+        aria-label={`Classic Winamp equalizer, ${status} skin`}
+        aria-busy={status === "loading"}
+        style={{ width: W * scale, height: height * scale }}
+      >
         <div
           style={{
             position: "relative",
@@ -113,6 +131,8 @@ export function ClassicEqWindow({
             down={eqEnabled ? "EQ_ON_BUTTON" : "EQ_ON_BUTTON_SELECTED"}
             onClick={() => setEqEnabled(!eqEnabled)}
             title={eqEnabled ? "EQ on" : "EQ off"}
+            ariaLabel="Toggle equalizer"
+            ariaPressed={eqEnabled}
             style={placed(14, 18)}
           />
           <Sprite name="EQ_AUTO_BUTTON" style={placed(40, 18)} />
@@ -125,6 +145,12 @@ export function ClassicEqWindow({
             thumbActive="EQ_SLIDER_THUMB_SELECTED"
             value={gainToValue(preamp)}
             onChange={(v) => setPreamp(valueToGain(v))}
+            ariaLabel="Preamp"
+            ariaValueMin={-EQ_MAX_DB}
+            ariaValueMax={EQ_MAX_DB}
+            ariaValueNow={preamp}
+            ariaValueText={`${preamp} decibels`}
+            keyboardStep={1 / (2 * EQ_MAX_DB)}
             trackWidth={11}
             trackHeight={BAND_TRACK_H}
             vertical
@@ -137,6 +163,12 @@ export function ClassicEqWindow({
               thumbActive="EQ_SLIDER_THUMB_SELECTED"
               value={gainToValue(eqGains[i])}
               onChange={(v) => setEqGain(i, valueToGain(v))}
+              ariaLabel={`${EQ_BANDS[i]} Hz equalizer`}
+              ariaValueMin={-EQ_MAX_DB}
+              ariaValueMax={EQ_MAX_DB}
+              ariaValueNow={eqGains[i]}
+              ariaValueText={`${eqGains[i]} decibels`}
+              keyboardStep={1 / (2 * EQ_MAX_DB)}
               trackWidth={11}
               trackHeight={BAND_TRACK_H}
               vertical

@@ -1,6 +1,12 @@
 "use client";
 
-import { type CSSProperties, type PointerEvent, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent,
+  useRef,
+  useState,
+} from "react";
 import { SPRITE_DIMS, type SpriteName } from "./skinSprites";
 import { useSkinContext } from "./SkinContext";
 
@@ -18,6 +24,12 @@ export function Slider({
   thumbActive,
   value,
   onChange,
+  ariaLabel,
+  ariaValueMin = 0,
+  ariaValueMax = 1,
+  ariaValueNow,
+  ariaValueText,
+  keyboardStep = 0.05,
   trackWidth,
   trackHeight,
   frames,
@@ -30,6 +42,12 @@ export function Slider({
   thumbActive?: SpriteName;
   value: number;
   onChange?: (value: number) => void;
+  ariaLabel?: string;
+  ariaValueMin?: number;
+  ariaValueMax?: number;
+  ariaValueNow?: number;
+  ariaValueText?: string;
+  keyboardStep?: number;
   trackWidth: number;
   trackHeight: number;
   frames?: number;
@@ -51,6 +69,7 @@ export function Slider({
   // Window into the correct level-frame for multi-frame tracks (e.g. volume).
   const frameY =
     frames && frameHeight ? Math.round(v * (frames - 1)) * frameHeight : 0;
+  const now = ariaValueNow ?? ariaValueMin + v * (ariaValueMax - ariaValueMin);
 
   const emit = (clientX: number, clientY: number) => {
     const el = ref.current;
@@ -77,14 +96,39 @@ export function Slider({
     if (dragging) emit(e.clientX, e.clientY);
   };
   const stop = () => setDragging(false);
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (!onChange) return;
+    const step = Math.max(0, keyboardStep);
+    let next: number | undefined;
+    if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = 1;
+    else if (e.key === "PageUp") next = v + step * 10;
+    else if (e.key === "PageDown") next = v - step * 10;
+    else if (e.key === "ArrowUp" || (!vertical && e.key === "ArrowRight")) next = v + step;
+    else if (e.key === "ArrowDown" || (!vertical && e.key === "ArrowLeft")) next = v - step;
+    else if (vertical && e.key === "ArrowRight") next = v + step;
+    else if (vertical && e.key === "ArrowLeft") next = v - step;
+    if (next === undefined) return;
+    e.preventDefault();
+    onChange(Math.min(1, Math.max(0, next)));
+  };
 
   return (
     <div
       ref={ref}
+      role="slider"
+      tabIndex={0}
+      aria-label={ariaLabel}
+      aria-orientation={vertical ? "vertical" : "horizontal"}
+      aria-valuemin={ariaValueMin}
+      aria-valuemax={ariaValueMax}
+      aria-valuenow={now}
+      aria-valuetext={ariaValueText}
       onPointerDown={onDown}
       onPointerMove={onMove}
       onPointerUp={stop}
       onPointerCancel={stop}
+      onKeyDown={onKeyDown}
       style={{
         position: "absolute",
         width: trackWidth,

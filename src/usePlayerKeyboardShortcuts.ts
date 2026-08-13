@@ -34,6 +34,7 @@ export function usePlayerKeyboardShortcuts(options: KeyboardShortcutOptions = {}
       if (
         t &&
         (t.tagName === "INPUT" ||
+          t.tagName === "SELECT" ||
           t.tagName === "TEXTAREA" ||
           t.tagName === "BUTTON" ||
           t.isContentEditable)

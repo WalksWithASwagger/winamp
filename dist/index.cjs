@@ -715,7 +715,7 @@ function usePlayerKeyboardShortcuts(options = {}) {
     if (!enabled) return;
     const onKey = (e) => {
       const t = e.target;
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "BUTTON" || t.isContentEditable))
+      if (t && (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA" || t.tagName === "BUTTON" || t.isContentEditable))
         return;
       const { currentId: currentId2, time: time2, duration: duration2, volume: volume2 } = live.current;
       switch (e.code) {
@@ -807,7 +807,16 @@ function Spectrum({ colors }) {
     draw();
     return () => cancelAnimationFrame(raf);
   }, [analyser, playing, reduced, colors]);
-  return /* @__PURE__ */ jsxRuntime.jsx("canvas", { ref: canvasRef, width: 58, height: 16, className: "deck-spectrum" });
+  return /* @__PURE__ */ jsxRuntime.jsx(
+    "canvas",
+    {
+      ref: canvasRef,
+      width: 58,
+      height: 16,
+      className: "deck-spectrum",
+      "aria-hidden": "true"
+    }
+  );
 }
 function WinampPlayer({
   storageKey = "deckState",
@@ -850,6 +859,9 @@ function WinampPlayer({
   const [canViz, setCanViz] = react.useState(false);
   const [isMobile, setIsMobile] = react.useState(false);
   const [easter, setEaster] = react.useState(false);
+  const deckId = react.useId();
+  const eqPanelId = `${deckId}-eq`;
+  const playlistId = `${deckId}-playlist`;
   const dragControls = framerMotion.useDragControls();
   const boundsRef = react.useRef(null);
   const deckRef = react.useRef(null);
@@ -989,7 +1001,8 @@ function WinampPlayer({
       {
         ref: deckRef,
         className: `deck${shaded ? " is-shaded" : ""}`,
-        "aria-label": "Block Party player",
+        role: "region",
+        "aria-label": `Block Party player${theme ? `, ${theme} skin` : ""}`,
         drag: !isMobile,
         dragControls,
         dragListener: false,
@@ -1032,6 +1045,7 @@ function WinampPlayer({
                       type: "button",
                       className: `deck-winbtn${vizOpen ? " on" : ""}`,
                       "aria-pressed": vizOpen,
+                      "aria-expanded": vizOpen,
                       "aria-label": "Toggle visualizer",
                       title: "Milkdrop visualizer",
                       onClick: () => setVizOpen((v) => !v),
@@ -1044,6 +1058,8 @@ function WinampPlayer({
                       type: "button",
                       className: `deck-winbtn deck-winbtn-eq${eqOpen ? " on" : ""}`,
                       "aria-pressed": eqOpen,
+                      "aria-expanded": eqOpen,
+                      "aria-controls": eqPanelId,
                       "aria-label": "Toggle equalizer",
                       title: "Equalizer",
                       onClick: () => setEqOpen((v) => !v),
@@ -1056,6 +1072,8 @@ function WinampPlayer({
                       type: "button",
                       className: `deck-winbtn${listOpen ? " on" : ""}`,
                       "aria-pressed": listOpen,
+                      "aria-expanded": listOpen,
+                      "aria-controls": playlistId,
                       "aria-label": "Toggle playlist",
                       onClick: () => setListOpen((v) => !v),
                       children: "\u2263"
@@ -1067,6 +1085,7 @@ function WinampPlayer({
                       type: "button",
                       className: `deck-winbtn${doubled ? " on" : ""}`,
                       "aria-pressed": doubled,
+                      "aria-expanded": doubled,
                       "aria-label": "Double size",
                       title: "Double size",
                       onClick: () => setDoubled((v) => {
@@ -1093,6 +1112,8 @@ function WinampPlayer({
                       type: "button",
                       className: "deck-winbtn",
                       "aria-label": shaded ? "Expand player" : "Collapse player",
+                      "aria-pressed": shaded,
+                      "aria-expanded": !shaded,
                       onClick: () => setShaded((v) => !v),
                       children: shaded ? "\u25A3" : "_"
                     }
@@ -1111,15 +1132,16 @@ function WinampPlayer({
                   className: "deck-time",
                   onClick: () => setShowRemaining((v) => !v),
                   "aria-label": showRemaining ? "Show elapsed time" : "Show remaining time",
+                  "aria-pressed": showRemaining,
                   title: showRemaining ? "Remaining" : "Elapsed",
                   children: showRemaining && duration ? `-${fmt(Math.max(0, duration - time))}` : fmt(time)
                 }
               ),
               /* @__PURE__ */ jsxRuntime.jsx(Spectrum, { colors: spectrum }),
-              /* @__PURE__ */ jsxRuntime.jsx("div", { className: "deck-marquee", "aria-live": "polite", children: /* @__PURE__ */ jsxRuntime.jsxs("span", { className: `deck-marquee-text${marqueeRuns ? " run" : ""}`, children: [
+              /* @__PURE__ */ jsxRuntime.jsx("div", { className: "deck-marquee", role: "status", "aria-live": "polite", "aria-atomic": "true", children: /* @__PURE__ */ jsxRuntime.jsxs("span", { className: `deck-marquee-text${marqueeRuns ? " run" : ""}`, children: [
                 displayMarquee,
                 /* @__PURE__ */ jsxRuntime.jsx("span", { "aria-hidden": "true", className: "deck-marquee-gap", children: "      \u25C8      " }),
-                marqueeRuns ? displayMarquee : ""
+                marqueeRuns ? /* @__PURE__ */ jsxRuntime.jsx("span", { "aria-hidden": "true", children: displayMarquee }) : ""
               ] }) })
             ] }),
             /* @__PURE__ */ jsxRuntime.jsxs("div", { className: "deck-ctrl", children: [
@@ -1141,6 +1163,7 @@ function WinampPlayer({
                   style: playing && bpm ? { "--beat": `${(60 / bpm).toFixed(3)}s` } : void 0,
                   onClick: toggle,
                   "aria-label": playing ? "Pause" : "Play",
+                  "aria-pressed": playing,
                   children: playing ? "\u23F8" : "\u25B6"
                 }
               ),
@@ -1164,7 +1187,8 @@ function WinampPlayer({
                   step: 0.1,
                   value: Math.min(time, duration || 0),
                   onChange: (e) => seek(Number(e.target.value)),
-                  "aria-label": "Seek"
+                  "aria-label": "Seek",
+                  "aria-valuetext": `${fmt(time)} of ${fmt(duration)}`
                 }
               ),
               /* @__PURE__ */ jsxRuntime.jsx(
@@ -1178,11 +1202,12 @@ function WinampPlayer({
                   value: volume,
                   onChange: (e) => setVolume(Number(e.target.value)),
                   "aria-label": "Volume",
+                  "aria-valuetext": `${Math.round(volume * 100)}%`,
                   title: "Volume"
                 }
               )
             ] }),
-            eqOpen && /* @__PURE__ */ jsxRuntime.jsxs("div", { className: "deck-eq-panel", children: [
+            eqOpen && /* @__PURE__ */ jsxRuntime.jsxs("div", { id: eqPanelId, className: "deck-eq-panel", role: "region", "aria-label": "Equalizer", children: [
               /* @__PURE__ */ jsxRuntime.jsx("div", { className: "deck-eq-presets", children: Object.keys(EQ_PRESETS).map((name) => /* @__PURE__ */ jsxRuntime.jsx(
                 "button",
                 {
@@ -1217,13 +1242,14 @@ function WinampPlayer({
                       setEqPreset(null);
                       persist({ eq: next2, eqPreset: null });
                     },
-                    "aria-label": `${eqBandLabel(hz)} Hz, ${eqGains[i] ?? 0} decibels`
+                    "aria-label": `${eqBandLabel(hz)} Hz equalizer`,
+                    "aria-valuetext": `${eqGains[i] ?? 0} decibels`
                   }
                 ) }),
                 /* @__PURE__ */ jsxRuntime.jsx("span", { className: "deck-eq-hz", "aria-hidden": "true", children: eqBandLabel(hz) })
               ] }, hz)) })
             ] }),
-            listOpen && /* @__PURE__ */ jsxRuntime.jsxs("div", { className: "deck-list", children: [
+            listOpen && /* @__PURE__ */ jsxRuntime.jsxs("div", { id: playlistId, className: "deck-list", role: "region", "aria-label": "Playlist", children: [
               /* @__PURE__ */ jsxRuntime.jsxs("p", { className: "deck-list-head", children: [
                 playableCount,
                 "/",
@@ -1241,6 +1267,7 @@ function WinampPlayer({
                     onClick: () => can && playTrack(t.id),
                     disabled: !can,
                     "aria-current": isCur || void 0,
+                    "aria-label": `${String(t.number).padStart(2, "0")}. ${t.title} by ${t.person}${isCur ? ", current track" : ""}${!can ? ", unavailable" : ""}`,
                     children: [
                       t.coverImage ? /* @__PURE__ */ jsxRuntime.jsx("img", { className: "deck-row-cover", src: t.coverImage, alt: "" }) : /* @__PURE__ */ jsxRuntime.jsx(
                         "span",
@@ -1618,6 +1645,10 @@ function SpriteButton({
   down,
   onClick,
   title,
+  ariaLabel,
+  ariaPressed,
+  ariaExpanded,
+  ariaControls,
   style
 }) {
   const skin = useSkinContext();
@@ -1627,7 +1658,10 @@ function SpriteButton({
     {
       type: "button",
       title,
-      "aria-label": title,
+      "aria-label": ariaLabel ?? title,
+      "aria-pressed": ariaPressed,
+      "aria-expanded": ariaExpanded,
+      "aria-controls": ariaControls,
       onClick,
       onPointerDown: () => setPressed(true),
       onPointerUp: () => setPressed(false),
@@ -1649,6 +1683,12 @@ function Slider({
   thumbActive,
   value,
   onChange,
+  ariaLabel,
+  ariaValueMin = 0,
+  ariaValueMax = 1,
+  ariaValueNow,
+  ariaValueText,
+  keyboardStep = 0.05,
   trackWidth,
   trackHeight,
   frames,
@@ -1665,6 +1705,7 @@ function Slider({
   const thumbW = SPRITE_DIMS[thumb]?.width ?? 0;
   const thumbH = SPRITE_DIMS[thumb]?.height ?? 0;
   const frameY = frames && frameHeight ? Math.round(v * (frames - 1)) * frameHeight : 0;
+  const now = ariaValueNow ?? ariaValueMin + v * (ariaValueMax - ariaValueMin);
   const emit = (clientX, clientY) => {
     const el = ref.current;
     if (!el || !onChange) return;
@@ -1684,14 +1725,39 @@ function Slider({
     if (dragging) emit(e.clientX, e.clientY);
   };
   const stop = () => setDragging(false);
+  const onKeyDown = (e) => {
+    if (!onChange) return;
+    const step = Math.max(0, keyboardStep);
+    let next;
+    if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = 1;
+    else if (e.key === "PageUp") next = v + step * 10;
+    else if (e.key === "PageDown") next = v - step * 10;
+    else if (e.key === "ArrowUp" || !vertical && e.key === "ArrowRight") next = v + step;
+    else if (e.key === "ArrowDown" || !vertical && e.key === "ArrowLeft") next = v - step;
+    else if (vertical && e.key === "ArrowRight") next = v + step;
+    else if (vertical && e.key === "ArrowLeft") next = v - step;
+    if (next === void 0) return;
+    e.preventDefault();
+    onChange(Math.min(1, Math.max(0, next)));
+  };
   return /* @__PURE__ */ jsxRuntime.jsx(
     "div",
     {
       ref,
+      role: "slider",
+      tabIndex: 0,
+      "aria-label": ariaLabel,
+      "aria-orientation": vertical ? "vertical" : "horizontal",
+      "aria-valuemin": ariaValueMin,
+      "aria-valuemax": ariaValueMax,
+      "aria-valuenow": now,
+      "aria-valuetext": ariaValueText,
       onPointerDown: onDown,
       onPointerMove: onMove,
       onPointerUp: stop,
       onPointerCancel: stop,
+      onKeyDown,
       style: {
         position: "absolute",
         width: trackWidth,
@@ -1832,6 +1898,8 @@ function ClassicVisualizer({
       ref,
       width: VIZ_W,
       height: VIZ_H,
+      role: "img",
+      "aria-label": "Audio spectrum visualizer",
       style: { position: "absolute", left, top, width: VIZ_W, height: VIZ_H, imageRendering: "pixelated" }
     }
   );
@@ -1877,6 +1945,7 @@ var fmtTime = (s) => {
   const t = Math.max(0, Math.floor(s));
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
 };
+var balanceText = (v) => v === 0 ? "center" : `${Math.round(Math.abs(v) * 100)}% ${v < 0 ? "left" : "right"}`;
 function ClassicWinampPlayer({
   skinUrl,
   scale = 1,
@@ -1930,6 +1999,9 @@ function ClassicWinampPlayer({
       down: "MAIN_SHADE_BUTTON_DEPRESSED",
       onClick: () => setShade(!shade),
       title: shade ? "Restore" : "Windowshade",
+      ariaLabel: "Toggle windowshade",
+      ariaPressed: shade,
+      ariaExpanded: !shade,
       style: placed(254, 3)
     }
   );
@@ -1938,6 +2010,15 @@ function ClassicWinampPlayer({
     "div",
     {
       onDoubleClick: () => setDoubleSize(!doubleSize),
+      onKeyDown: (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        setDoubleSize(!doubleSize);
+      },
+      role: "button",
+      tabIndex: 0,
+      "aria-label": "Toggle double size",
+      "aria-pressed": doubleSize,
       title: "Double-click to toggle double size",
       style: { position: "absolute", left: 30, top: 0, width: 210, height: 14, cursor: "pointer" }
     }
@@ -1947,6 +2028,9 @@ function ClassicWinampPlayer({
     {
       "data-skin-status": status,
       "data-shade": shade ? "true" : "false",
+      role: "region",
+      "aria-label": `Classic Winamp player, ${status} skin`,
+      "aria-busy": status === "loading",
       style: { width: MAIN_WIDTH * s, height: height * s },
       children: /* @__PURE__ */ jsxRuntime.jsx(
         "div",
@@ -1990,6 +2074,12 @@ function ClassicWinampPlayer({
                 thumbActive: "MAIN_POSITION_SLIDER_THUMB_SELECTED",
                 value: position,
                 onChange: (v) => duration > 0 && seek(v * duration),
+                ariaLabel: "Seek",
+                ariaValueMin: 0,
+                ariaValueMax: duration,
+                ariaValueNow: time,
+                ariaValueText: `${fmtTime(time)} of ${fmtTime(duration)}`,
+                keyboardStep: duration > 0 ? 1 / duration : 0.05,
                 trackWidth: 248,
                 trackHeight: 10,
                 style: placed(16, 72)
@@ -2003,6 +2093,12 @@ function ClassicWinampPlayer({
                 thumbActive: "MAIN_VOLUME_THUMB_SELECTED",
                 value: volume,
                 onChange: setVolume,
+                ariaLabel: "Volume",
+                ariaValueMin: 0,
+                ariaValueMax: 100,
+                ariaValueNow: Math.round(volume * 100),
+                ariaValueText: `${Math.round(volume * 100)}%`,
+                keyboardStep: 0.01,
                 trackWidth: 68,
                 trackHeight: 13,
                 frames: 28,
@@ -2017,6 +2113,12 @@ function ClassicWinampPlayer({
                 thumbActive: "MAIN_BALANCE_THUMB_ACTIVE",
                 value: (balance + 1) / 2,
                 onChange: (v) => setBalance(v * 2 - 1),
+                ariaLabel: "Balance",
+                ariaValueMin: -1,
+                ariaValueMax: 1,
+                ariaValueNow: balance,
+                ariaValueText: balanceText(balance),
+                keyboardStep: 0.025,
                 trackWidth: 38,
                 trackHeight: 13,
                 style: placed(177, 57)
@@ -2029,6 +2131,8 @@ function ClassicWinampPlayer({
                 down: shuffle ? "MAIN_SHUFFLE_BUTTON" : "MAIN_SHUFFLE_BUTTON_SELECTED",
                 onClick: () => setShuffle(!shuffle),
                 title: shuffle ? "Shuffle on" : "Shuffle off",
+                ariaLabel: "Toggle shuffle",
+                ariaPressed: shuffle,
                 style: placed(164, 89)
               }
             ),
@@ -2039,6 +2143,8 @@ function ClassicWinampPlayer({
                 down: repeat ? "MAIN_REPEAT_BUTTON" : "MAIN_REPEAT_BUTTON_SELECTED",
                 onClick: () => setRepeat(!repeat),
                 title: repeat ? "Repeat on" : "Repeat off",
+                ariaLabel: "Toggle repeat",
+                ariaPressed: repeat,
                 style: placed(210, 89)
               }
             ),
@@ -2091,6 +2197,8 @@ function EqGraph({ gains, preamp }) {
       ref,
       width: 113,
       height: 19,
+      role: "img",
+      "aria-label": "Equalizer curve",
       style: { ...placed2(86, 17), width: 113, height: 19, imageRendering: "pixelated" }
     }
   );
@@ -2108,72 +2216,106 @@ function ClassicEqWindow({
     "div",
     {
       onDoubleClick: () => setShade(!shade),
+      onKeyDown: (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        setShade(!shade);
+      },
+      role: "button",
+      tabIndex: 0,
+      "aria-label": "Toggle windowshade",
+      "aria-pressed": shade,
       title: "Double-click to toggle windowshade",
       style: { position: "absolute", left: 0, top: 0, width: W - 11, height: SHADE_H, cursor: "pointer" }
     }
   );
-  return /* @__PURE__ */ jsxRuntime.jsx(SkinProvider, { skin, children: /* @__PURE__ */ jsxRuntime.jsx("div", { "data-eq-status": status, "data-shade": shade ? "true" : "false", style: { width: W * scale, height: height * scale }, children: /* @__PURE__ */ jsxRuntime.jsx(
+  return /* @__PURE__ */ jsxRuntime.jsx(SkinProvider, { skin, children: /* @__PURE__ */ jsxRuntime.jsx(
     "div",
     {
-      style: {
-        position: "relative",
-        width: W,
-        height,
-        transform: scale === 1 ? void 0 : `scale(${scale})`,
-        transformOrigin: "top left",
-        imageRendering: "pixelated"
-      },
-      children: shade ? /* @__PURE__ */ jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [
-        /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_TITLE_BAR_SELECTED", style: placed2(0, 0) }),
-        shadeToggle,
-        /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_CLOSE_BUTTON", style: placed2(264, 3) })
-      ] }) : /* @__PURE__ */ jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [
-        /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_WINDOW_BACKGROUND", style: placed2(0, 0) }),
-        /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_TITLE_BAR_SELECTED", style: placed2(0, 0) }),
-        shadeToggle,
-        /* @__PURE__ */ jsxRuntime.jsx(
-          SpriteButton,
-          {
-            up: eqEnabled ? "EQ_ON_BUTTON_SELECTED" : "EQ_ON_BUTTON",
-            down: eqEnabled ? "EQ_ON_BUTTON" : "EQ_ON_BUTTON_SELECTED",
-            onClick: () => setEqEnabled(!eqEnabled),
-            title: eqEnabled ? "EQ on" : "EQ off",
-            style: placed2(14, 18)
-          }
-        ),
-        /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_AUTO_BUTTON", style: placed2(40, 18) }),
-        /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_PRESETS_BUTTON", style: placed2(217, 18) }),
-        /* @__PURE__ */ jsxRuntime.jsx(EqGraph, { gains: eqGains, preamp }),
-        /* @__PURE__ */ jsxRuntime.jsx(
-          Slider,
-          {
-            thumb: "EQ_SLIDER_THUMB",
-            thumbActive: "EQ_SLIDER_THUMB_SELECTED",
-            value: gainToValue(preamp),
-            onChange: (v) => setPreamp(valueToGain(v)),
-            trackWidth: 11,
-            trackHeight: BAND_TRACK_H,
-            vertical: true,
-            style: placed2(21, BAND_TOP)
-          }
-        ),
-        EQ_BANDS.map((_, i) => /* @__PURE__ */ jsxRuntime.jsx(
-          Slider,
-          {
-            thumb: "EQ_SLIDER_THUMB",
-            thumbActive: "EQ_SLIDER_THUMB_SELECTED",
-            value: gainToValue(eqGains[i]),
-            onChange: (v) => setEqGain(i, valueToGain(v)),
-            trackWidth: 11,
-            trackHeight: BAND_TRACK_H,
-            vertical: true,
-            style: placed2(BAND_X0 + i * BAND_STEP, BAND_TOP)
+      "data-eq-status": status,
+      "data-shade": shade ? "true" : "false",
+      role: "region",
+      "aria-label": `Classic Winamp equalizer, ${status} skin`,
+      "aria-busy": status === "loading",
+      style: { width: W * scale, height: height * scale },
+      children: /* @__PURE__ */ jsxRuntime.jsx(
+        "div",
+        {
+          style: {
+            position: "relative",
+            width: W,
+            height,
+            transform: scale === 1 ? void 0 : `scale(${scale})`,
+            transformOrigin: "top left",
+            imageRendering: "pixelated"
           },
-          i
-        ))
-      ] })
+          children: shade ? /* @__PURE__ */ jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [
+            /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_TITLE_BAR_SELECTED", style: placed2(0, 0) }),
+            shadeToggle,
+            /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_CLOSE_BUTTON", style: placed2(264, 3) })
+          ] }) : /* @__PURE__ */ jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [
+            /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_WINDOW_BACKGROUND", style: placed2(0, 0) }),
+            /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_TITLE_BAR_SELECTED", style: placed2(0, 0) }),
+            shadeToggle,
+            /* @__PURE__ */ jsxRuntime.jsx(
+              SpriteButton,
+              {
+                up: eqEnabled ? "EQ_ON_BUTTON_SELECTED" : "EQ_ON_BUTTON",
+                down: eqEnabled ? "EQ_ON_BUTTON" : "EQ_ON_BUTTON_SELECTED",
+                onClick: () => setEqEnabled(!eqEnabled),
+                title: eqEnabled ? "EQ on" : "EQ off",
+                ariaLabel: "Toggle equalizer",
+                ariaPressed: eqEnabled,
+                style: placed2(14, 18)
+              }
+            ),
+            /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_AUTO_BUTTON", style: placed2(40, 18) }),
+            /* @__PURE__ */ jsxRuntime.jsx(Sprite, { name: "EQ_PRESETS_BUTTON", style: placed2(217, 18) }),
+            /* @__PURE__ */ jsxRuntime.jsx(EqGraph, { gains: eqGains, preamp }),
+            /* @__PURE__ */ jsxRuntime.jsx(
+              Slider,
+              {
+                thumb: "EQ_SLIDER_THUMB",
+                thumbActive: "EQ_SLIDER_THUMB_SELECTED",
+                value: gainToValue(preamp),
+                onChange: (v) => setPreamp(valueToGain(v)),
+                ariaLabel: "Preamp",
+                ariaValueMin: -EQ_MAX_DB,
+                ariaValueMax: EQ_MAX_DB,
+                ariaValueNow: preamp,
+                ariaValueText: `${preamp} decibels`,
+                keyboardStep: 1 / (2 * EQ_MAX_DB),
+                trackWidth: 11,
+                trackHeight: BAND_TRACK_H,
+                vertical: true,
+                style: placed2(21, BAND_TOP)
+              }
+            ),
+            EQ_BANDS.map((_, i) => /* @__PURE__ */ jsxRuntime.jsx(
+              Slider,
+              {
+                thumb: "EQ_SLIDER_THUMB",
+                thumbActive: "EQ_SLIDER_THUMB_SELECTED",
+                value: gainToValue(eqGains[i]),
+                onChange: (v) => setEqGain(i, valueToGain(v)),
+                ariaLabel: `${EQ_BANDS[i]} Hz equalizer`,
+                ariaValueMin: -EQ_MAX_DB,
+                ariaValueMax: EQ_MAX_DB,
+                ariaValueNow: eqGains[i],
+                ariaValueText: `${eqGains[i]} decibels`,
+                keyboardStep: 1 / (2 * EQ_MAX_DB),
+                trackWidth: 11,
+                trackHeight: BAND_TRACK_H,
+                vertical: true,
+                style: placed2(BAND_X0 + i * BAND_STEP, BAND_TOP)
+              },
+              i
+            ))
+          ] })
+        }
+      )
     }
-  ) }) });
+  ) });
 }
 var W2 = 275;
 var H2 = 116;
@@ -2228,84 +2370,115 @@ function ClassicPlaylistWindow({
     "div",
     {
       onDoubleClick: () => setShade(!shade),
+      onKeyDown: (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        setShade(!shade);
+      },
+      role: "button",
+      tabIndex: 0,
+      "aria-label": "Toggle windowshade",
+      "aria-pressed": shade,
       title: "Double-click to toggle windowshade",
       style: { position: "absolute", left: 25, top: 0, width: W2 - 75, height: SHADE_H2, cursor: "pointer" }
     }
   );
-  return /* @__PURE__ */ jsxRuntime.jsx(SkinProvider, { skin, children: /* @__PURE__ */ jsxRuntime.jsx("div", { "data-pl-status": status, "data-shade": shade ? "true" : "false", style: { width: W2 * scale, height: height * scale }, children: /* @__PURE__ */ jsxRuntime.jsx(
+  return /* @__PURE__ */ jsxRuntime.jsx(SkinProvider, { skin, children: /* @__PURE__ */ jsxRuntime.jsx(
     "div",
     {
-      style: {
-        position: "relative",
-        width: W2,
-        height,
-        transform: scale === 1 ? void 0 : `scale(${scale})`,
-        transformOrigin: "top left",
-        imageRendering: "pixelated"
-      },
-      children: shade ? /* @__PURE__ */ jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [
-        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_SHADE_LEFT", left: 0, top: 0, width: 25, height: SHADE_H2, repeat: "no-repeat" }),
-        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_SHADE_CENTER", left: 25, top: 0, width: W2 - 75, height: SHADE_H2, repeat: "repeat-x" }),
-        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_SHADE_RIGHT", left: W2 - 50, top: 0, width: 50, height: SHADE_H2, repeat: "no-repeat" }),
-        shadeToggle
-      ] }) : /* @__PURE__ */ jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [
-        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_TOP_TILE_SELECTED", left: 0, top: 0, width: W2, height: TOP_H, repeat: "repeat-x" }),
-        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_TOP_LEFT_SELECTED", left: 0, top: 0, width: 25, height: TOP_H, repeat: "no-repeat" }),
-        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_TITLE_BAR_SELECTED", left: titleLeft, top: 0, width: TITLE_W, height: TOP_H, repeat: "no-repeat" }),
-        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_TOP_RIGHT_CORNER_SELECTED", left: W2 - 25, top: 0, width: 25, height: TOP_H, repeat: "no-repeat" }),
-        shadeToggle,
-        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_LEFT_TILE", left: 0, top: TOP_H, width: LEFT_W, height: H2 - TOP_H - BOTTOM_H, repeat: "repeat-y" }),
-        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_RIGHT_TILE", left: W2 - RIGHT_W, top: TOP_H, width: RIGHT_W, height: H2 - TOP_H - BOTTOM_H, repeat: "repeat-y" }),
-        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_BOTTOM_LEFT_CORNER", left: 0, top: H2 - BOTTOM_H, width: 125, height: BOTTOM_H, repeat: "no-repeat" }),
-        /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_BOTTOM_RIGHT_CORNER", left: 125, top: H2 - BOTTOM_H, width: 150, height: BOTTOM_H, repeat: "no-repeat" }),
-        /* @__PURE__ */ jsxRuntime.jsx(
-          "div",
-          {
-            style: {
-              position: "absolute",
-              left: LEFT_W,
-              top: TOP_H,
-              width: W2 - LEFT_W - RIGHT_W,
-              height: H2 - TOP_H - BOTTOM_H,
-              background: bg,
-              overflowY: "auto",
-              font: "9px ui-monospace, monospace",
-              lineHeight: "10px",
-              whiteSpace: "nowrap"
-            },
-            children: allTracks.map((t) => {
-              const isCurrent = t.id === currentId;
-              const playable = !!t.audioUrl;
-              return /* @__PURE__ */ jsxRuntime.jsxs(
-                "div",
-                {
-                  onClick: () => playable && playTrack(t.id),
-                  title: `${t.title} - ${t.person}`,
-                  style: {
-                    padding: "0 3px",
-                    color: isCurrent ? current : normal,
-                    background: isCurrent ? selectedBg : void 0,
-                    opacity: playable ? 1 : 0.5,
-                    cursor: playable ? "pointer" : "default",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis"
-                  },
-                  children: [
-                    t.number,
-                    ". ",
-                    t.title,
-                    " - ",
-                    t.person
-                  ]
+      "data-pl-status": status,
+      "data-shade": shade ? "true" : "false",
+      role: "region",
+      "aria-label": `Classic Winamp playlist, ${status} skin`,
+      "aria-busy": status === "loading",
+      style: { width: W2 * scale, height: height * scale },
+      children: /* @__PURE__ */ jsxRuntime.jsx(
+        "div",
+        {
+          style: {
+            position: "relative",
+            width: W2,
+            height,
+            transform: scale === 1 ? void 0 : `scale(${scale})`,
+            transformOrigin: "top left",
+            imageRendering: "pixelated"
+          },
+          children: shade ? /* @__PURE__ */ jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [
+            /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_SHADE_LEFT", left: 0, top: 0, width: 25, height: SHADE_H2, repeat: "no-repeat" }),
+            /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_SHADE_CENTER", left: 25, top: 0, width: W2 - 75, height: SHADE_H2, repeat: "repeat-x" }),
+            /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_SHADE_RIGHT", left: W2 - 50, top: 0, width: 50, height: SHADE_H2, repeat: "no-repeat" }),
+            shadeToggle
+          ] }) : /* @__PURE__ */ jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [
+            /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_TOP_TILE_SELECTED", left: 0, top: 0, width: W2, height: TOP_H, repeat: "repeat-x" }),
+            /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_TOP_LEFT_SELECTED", left: 0, top: 0, width: 25, height: TOP_H, repeat: "no-repeat" }),
+            /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_TITLE_BAR_SELECTED", left: titleLeft, top: 0, width: TITLE_W, height: TOP_H, repeat: "no-repeat" }),
+            /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_TOP_RIGHT_CORNER_SELECTED", left: W2 - 25, top: 0, width: 25, height: TOP_H, repeat: "no-repeat" }),
+            shadeToggle,
+            /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_LEFT_TILE", left: 0, top: TOP_H, width: LEFT_W, height: H2 - TOP_H - BOTTOM_H, repeat: "repeat-y" }),
+            /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_RIGHT_TILE", left: W2 - RIGHT_W, top: TOP_H, width: RIGHT_W, height: H2 - TOP_H - BOTTOM_H, repeat: "repeat-y" }),
+            /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_BOTTOM_LEFT_CORNER", left: 0, top: H2 - BOTTOM_H, width: 125, height: BOTTOM_H, repeat: "no-repeat" }),
+            /* @__PURE__ */ jsxRuntime.jsx(Tile, { name: "PLAYLIST_BOTTOM_RIGHT_CORNER", left: 125, top: H2 - BOTTOM_H, width: 150, height: BOTTOM_H, repeat: "no-repeat" }),
+            /* @__PURE__ */ jsxRuntime.jsx(
+              "div",
+              {
+                role: "list",
+                "aria-label": `Playlist tracks, ${allTracks.length} total`,
+                style: {
+                  position: "absolute",
+                  left: LEFT_W,
+                  top: TOP_H,
+                  width: W2 - LEFT_W - RIGHT_W,
+                  height: H2 - TOP_H - BOTTOM_H,
+                  background: bg,
+                  overflowY: "auto",
+                  font: "9px ui-monospace, monospace",
+                  lineHeight: "10px",
+                  whiteSpace: "nowrap"
                 },
-                t.id
-              );
-            })
-          }
-        )
-      ] })
+                children: allTracks.map((t, i) => {
+                  const isCurrent = t.id === currentId;
+                  const playable = !!t.audioUrl;
+                  return /* @__PURE__ */ jsxRuntime.jsx("div", { role: "listitem", "aria-setsize": allTracks.length, "aria-posinset": i + 1, children: /* @__PURE__ */ jsxRuntime.jsxs(
+                    "div",
+                    {
+                      role: "button",
+                      tabIndex: playable ? 0 : -1,
+                      "aria-disabled": !playable || void 0,
+                      "aria-current": isCurrent || void 0,
+                      "aria-label": `${t.number}. ${t.title} - ${t.person}${isCurrent ? ", current track" : ""}${!playable ? ", unavailable" : ""}`,
+                      onClick: () => playable && playTrack(t.id),
+                      onKeyDown: (e) => {
+                        if (!playable || e.key !== "Enter" && e.key !== " ") return;
+                        e.preventDefault();
+                        playTrack(t.id);
+                      },
+                      title: `${t.title} - ${t.person}`,
+                      style: {
+                        padding: "0 3px",
+                        color: isCurrent ? current : normal,
+                        background: isCurrent ? selectedBg : void 0,
+                        opacity: playable ? 1 : 0.5,
+                        cursor: playable ? "pointer" : "default",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis"
+                      },
+                      children: [
+                        t.number,
+                        ". ",
+                        t.title,
+                        " - ",
+                        t.person
+                      ]
+                    }
+                  ) }, t.id);
+                })
+              }
+            )
+          ] })
+        }
+      )
     }
-  ) }) });
+  ) });
 }
 
 // src/classic/skinMuseum.ts

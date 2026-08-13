@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties } from "react";
+import { type CSSProperties, type KeyboardEvent } from "react";
 import { usePlayer } from "../PlayerProvider";
 import { useSkin } from "./useSkin";
 import { SkinProvider, useSkinContext } from "./SkinContext";
@@ -83,6 +83,15 @@ export function ClassicPlaylistWindow({
   const shadeToggle = (
     <div
       onDoubleClick={() => setShade(!shade)}
+      onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        setShade(!shade);
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label="Toggle windowshade"
+      aria-pressed={shade}
       title="Double-click to toggle windowshade"
       style={{ position: "absolute", left: 25, top: 0, width: W - 75, height: SHADE_H, cursor: "pointer" }}
     />
@@ -90,7 +99,14 @@ export function ClassicPlaylistWindow({
 
   return (
     <SkinProvider skin={skin}>
-      <div data-pl-status={status} data-shade={shade ? "true" : "false"} style={{ width: W * scale, height: height * scale }}>
+      <div
+        data-pl-status={status}
+        data-shade={shade ? "true" : "false"}
+        role="region"
+        aria-label={`Classic Winamp playlist, ${status} skin`}
+        aria-busy={status === "loading"}
+        style={{ width: W * scale, height: height * scale }}
+      >
         <div
           style={{
             position: "relative",
@@ -123,6 +139,8 @@ export function ClassicPlaylistWindow({
 
           {/* Track list. */}
           <div
+            role="list"
+            aria-label={`Playlist tracks, ${allTracks.length} total`}
             style={{
               position: "absolute",
               left: LEFT_W,
@@ -136,25 +154,36 @@ export function ClassicPlaylistWindow({
               whiteSpace: "nowrap",
             }}
           >
-            {allTracks.map((t) => {
+            {allTracks.map((t, i) => {
               const isCurrent = t.id === currentId;
               const playable = !!t.audioUrl;
               return (
-                <div
-                  key={t.id}
-                  onClick={() => playable && playTrack(t.id)}
-                  title={`${t.title} - ${t.person}`}
-                  style={{
-                    padding: "0 3px",
-                    color: isCurrent ? current : normal,
-                    background: isCurrent ? selectedBg : undefined,
-                    opacity: playable ? 1 : 0.5,
-                    cursor: playable ? "pointer" : "default",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {t.number}. {t.title} - {t.person}
+                <div key={t.id} role="listitem" aria-setsize={allTracks.length} aria-posinset={i + 1}>
+                  <div
+                    role="button"
+                    tabIndex={playable ? 0 : -1}
+                    aria-disabled={!playable || undefined}
+                    aria-current={isCurrent || undefined}
+                    aria-label={`${t.number}. ${t.title} - ${t.person}${isCurrent ? ", current track" : ""}${!playable ? ", unavailable" : ""}`}
+                    onClick={() => playable && playTrack(t.id)}
+                    onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
+                      if (!playable || (e.key !== "Enter" && e.key !== " ")) return;
+                      e.preventDefault();
+                      playTrack(t.id);
+                    }}
+                    title={`${t.title} - ${t.person}`}
+                    style={{
+                      padding: "0 3px",
+                      color: isCurrent ? current : normal,
+                      background: isCurrent ? selectedBg : undefined,
+                      opacity: playable ? 1 : 0.5,
+                      cursor: playable ? "pointer" : "default",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {t.number}. {t.title} - {t.person}
+                  </div>
                 </div>
               );
             })}
