@@ -1,0 +1,18 @@
+[
+  {
+    "number": 101,
+    "title": "Ready issue",
+    "labels": [{"name": "agent:ready"}],
+    "url": "https://github.com/WalksWithASwagger/winamp/issues/101"
+  },
+  {
+    "number": 102,
+    "title": "Blocked issue",
+    "labels": [{"name": "blocked"}]
+  },
+  {
+    "number": 103,
+    "title": "Human decision issue",
+    "labels": [{"name": "needs-decision"}]
+  }
+]

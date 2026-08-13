@@ -1,0 +1,6 @@
+{
+  "body": "## Context\n\nA saved issue record.\n\n## Acceptance Criteria\n\n- [ ] The issue is lintable.\n\n## Tests/Evals\n\nRun the focused tests.\n\n## Verification\n\nRun applicable checks.\n\n## Agent Instructions\n\nStay in the worktree.\n\n## Out of Scope\n\nNo unrelated changes.\n",
+  "labels": [
+    {"name": "agent:ready"}
+  ]
+}
