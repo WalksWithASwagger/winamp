@@ -231,6 +231,13 @@ pnpm check:dist  # rebuild and fail if committed dist/ drifts from src/
 `dist/` is committed so the package installs directly from git; `check:dist`
 (also run in CI) guards it against drifting out of sync with `src/`.
 
+## Contributor guides
+
+- [Architecture](docs/ARCHITECTURE.md) — runtime data flow, public boundaries,
+  browser constraints, and generated package output.
+- [Contributing](docs/CONTRIBUTING.md) — Node/pnpm setup, worktrees,
+  preservation of unrelated dirty work, local commands, and verification.
+
 ### Playground
 
 `examples/playground` is a Vite app exercising both decks — theme switcher,
