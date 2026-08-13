@@ -6,6 +6,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- **v0.4 roadmap** — [bounded player API feature contract](./docs/ROADMAP-v0.4.md)
+  recommends observable remote playback loading/error state as the first slice;
+  implementation is intentionally deferred.
+
 ## [0.3.0] - 2026-06-28
 
 ### Added
