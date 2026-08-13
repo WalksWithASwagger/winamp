@@ -97,6 +97,8 @@ export function assertPageMetadata(html, expected) {
     throw new Error(`${expected.canonical} is missing a description`);
   }
 
+  assertValue(tags(html, "h1").length, 1, `${expected.canonical} H1 count`);
+
   assertMeta(html, "property", "og:title", expected.socialTitle);
   assertMeta(html, "property", "og:description", expected.socialDescription);
   assertMeta(html, "property", "og:type", "website");
