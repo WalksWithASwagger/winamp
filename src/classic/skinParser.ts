@@ -1,5 +1,18 @@
 import { SKIN_SPRITES, type SpriteName } from "./skinSprites";
 
+const MIB = 1024 * 1024;
+const MAX_COMPRESSED_SKIN_BYTES = 8 * MIB;
+const MAX_SKIN_ENTRIES = 128;
+const MAX_SKIN_ENTRY_BYTES = 8 * MIB;
+const MAX_EXPANDED_SKIN_BYTES = 32 * MIB;
+
+const SKIN_LIMIT_ERRORS = {
+  compressedSize: "classic-skin: compressed size exceeds 8 MiB",
+  entryCount: "classic-skin: entry count exceeds 128",
+  entrySize: "classic-skin: expanded entry size exceeds 8 MiB",
+  expandedSize: "classic-skin: expanded size exceeds 32 MiB",
+} as const;
+
 export type SkinColors = {
   /** 24 visualizer colors as CSS `rgb(...)` strings (from viscolor.txt). */
   viscolor: string[];
@@ -65,6 +78,55 @@ function cropSprite(
   return canvas.toDataURL();
 }
 
+async function unzipBounded(
+  data: Uint8Array,
+  unzip: typeof import("fflate").unzip,
+  unzipSync: typeof import("fflate").unzipSync,
+): Promise<Record<string, Uint8Array>> {
+  let entryCount = 0;
+  let expandedSize = 0;
+  let limitError: Error | undefined;
+
+  await new Promise<void>((resolve, reject) => {
+    unzip(
+      data,
+      {
+        filter: (file) => {
+          if (limitError) return false;
+          entryCount += 1;
+          if (entryCount > MAX_SKIN_ENTRIES) {
+            limitError = new Error(SKIN_LIMIT_ERRORS.entryCount);
+            return false;
+          }
+          if (file.originalSize > MAX_SKIN_ENTRY_BYTES) {
+            limitError = new Error(SKIN_LIMIT_ERRORS.entrySize);
+            return false;
+          }
+          if (file.originalSize > MAX_EXPANDED_SKIN_BYTES - expandedSize) {
+            limitError = new Error(SKIN_LIMIT_ERRORS.expandedSize);
+            return false;
+          }
+          expandedSize += file.originalSize;
+          return false;
+        },
+      },
+      (error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        if (limitError) {
+          reject(limitError);
+          return;
+        }
+        resolve();
+      },
+    );
+  });
+
+  return unzipSync(data, { filter: () => true });
+}
+
 /**
  * Parse a `.wsz` ArrayBuffer into a {@link Skin}: unzip, decode each BMP the
  * browser supports natively, crop every known sprite to a data-URI, and read
@@ -72,8 +134,12 @@ function cropSprite(
  * deck never pull it into their bundle.
  */
 export async function parseSkin(buf: ArrayBuffer): Promise<Skin> {
-  const { unzipSync } = await import("fflate");
-  const files = unzipSync(new Uint8Array(buf));
+  if (buf.byteLength > MAX_COMPRESSED_SKIN_BYTES) {
+    throw new Error(SKIN_LIMIT_ERRORS.compressedSize);
+  }
+
+  const { unzip, unzipSync } = await import("fflate");
+  const files = await unzipBounded(new Uint8Array(buf), unzip, unzipSync);
 
   // Skins vary in path/case; index by lowercased basename.
   const byName = new Map<string, Uint8Array>();
