@@ -1,0 +1,38 @@
+{
+  "issues": [
+    {
+      "number": 101,
+      "title": "Ready issue",
+      "labels": [{"name": "agent:ready"}],
+      "url": "https://github.com/WalksWithASwagger/winamp/issues/101"
+    },
+    {
+      "number": 102,
+      "title": "Blocked issue",
+      "labels": [{"name": "blocked"}]
+    },
+    {
+      "number": 103,
+      "title": "Human decision issue",
+      "labels": [{"name": "needs-decision"}]
+    }
+  ],
+  "pull_requests": [
+    {
+      "number": 201,
+      "title": "Review-ready change",
+      "labels": [{"name": "review-ready"}],
+      "isDraft": false,
+      "headRefName": "codex/issue-101-ready-issue",
+      "baseRefName": "main"
+    },
+    {
+      "number": 202,
+      "title": "Draft mislabeled review-ready",
+      "labels": [{"name": "review-ready"}],
+      "isDraft": true,
+      "headRefName": "codex/issue-102-blocked-issue",
+      "baseRefName": "main"
+    }
+  ]
+}
