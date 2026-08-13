@@ -11,3 +11,16 @@
 
 - [GitHub repository](https://github.com/WalksWithASwagger/winamp)
 - [npm package](https://www.npmjs.com/package/@walkswithaswagger/winamp)
+
+## Creative AI Human Lab
+
+Ghost Radio is part of Kris Krüg's Creative AI Human Lab, a linked set of
+public films, portals, music, and agent tools.
+
+- [KrisKrug.co Work](https://kriskrug.co/work/)
+- [Skywhale Airways](https://skywhaleairways.com/)
+- [Punk Rock AI](https://www.punkrockai.com/)
+- [Gorgeous Ghost](https://gorgeousghost.com/)
+- [Wedges](https://wedges.dev/)
+- [Too Weird to Die](https://www.bothhandsfull.com/album/too-weird-to-die)
+- [Ethos Lab Block Party](https://ethosblockparty.com/the-day)

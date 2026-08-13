@@ -1777,6 +1777,17 @@ var SPRITE_DIMS = Object.fromEntries(
 );
 
 // src/classic/skinParser.ts
+var MIB = 1024 * 1024;
+var MAX_COMPRESSED_SKIN_BYTES = 8 * MIB;
+var MAX_SKIN_ENTRIES = 128;
+var MAX_SKIN_ENTRY_BYTES = 8 * MIB;
+var MAX_EXPANDED_SKIN_BYTES = 32 * MIB;
+var SKIN_LIMIT_ERRORS = {
+  compressedSize: "classic-skin: compressed size exceeds 8 MiB",
+  entryCount: "classic-skin: entry count exceeds 128",
+  entrySize: "classic-skin: expanded entry size exceeds 8 MiB",
+  expandedSize: "classic-skin: expanded size exceeds 32 MiB"
+};
 var DEFAULT_VISCOLOR = [
   "rgb(0,0,0)",
   "rgb(24,33,41)",
@@ -1829,9 +1840,54 @@ function cropSprite(bitmap, s) {
   ctx.drawImage(bitmap, s.x, s.y, s.width, s.height, 0, 0, s.width, s.height);
   return canvas.toDataURL();
 }
+async function unzipBounded(data, unzip, unzipSync) {
+  let entryCount = 0;
+  let expandedSize = 0;
+  let limitError;
+  await new Promise((resolve, reject) => {
+    unzip(
+      data,
+      {
+        filter: (file) => {
+          if (limitError) return false;
+          entryCount += 1;
+          if (entryCount > MAX_SKIN_ENTRIES) {
+            limitError = new Error(SKIN_LIMIT_ERRORS.entryCount);
+            return false;
+          }
+          if (file.originalSize > MAX_SKIN_ENTRY_BYTES) {
+            limitError = new Error(SKIN_LIMIT_ERRORS.entrySize);
+            return false;
+          }
+          if (file.originalSize > MAX_EXPANDED_SKIN_BYTES - expandedSize) {
+            limitError = new Error(SKIN_LIMIT_ERRORS.expandedSize);
+            return false;
+          }
+          expandedSize += file.originalSize;
+          return false;
+        }
+      },
+      (error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        if (limitError) {
+          reject(limitError);
+          return;
+        }
+        resolve();
+      }
+    );
+  });
+  return unzipSync(data, { filter: () => true });
+}
 async function parseSkin(buf) {
-  const { unzipSync } = await import('fflate');
-  const files = unzipSync(new Uint8Array(buf));
+  if (buf.byteLength > MAX_COMPRESSED_SKIN_BYTES) {
+    throw new Error(SKIN_LIMIT_ERRORS.compressedSize);
+  }
+  const { unzip, unzipSync } = await import('fflate');
+  const files = await unzipBounded(new Uint8Array(buf), unzip, unzipSync);
   const byName = /* @__PURE__ */ new Map();
   for (const [path, data] of Object.entries(files)) {
     byName.set(path.split("/").pop().toLowerCase(), data);
