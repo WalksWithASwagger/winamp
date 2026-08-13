@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useRef, useState, useMemo, useCallback, useEffect, useId } from 'react';
+import { createContext, useContext, useRef, useState, useCallback, useMemo, useEffect, useId } from 'react';
 import { jsxs, jsx, Fragment } from 'react/jsx-runtime';
 import { motion, useDragControls, useMotionValue } from 'framer-motion';
 
@@ -26,6 +26,8 @@ function PlayerProvider({
   const pannerRef = useRef(null);
   const [currentId, setCurrentId] = useState(null);
   const [playing, setPlaying] = useState(false);
+  const [playbackStatus, setPlaybackStatusState] = useState("idle");
+  const [playbackError, setPlaybackError] = useState(null);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(0.85);
@@ -42,6 +44,16 @@ function PlayerProvider({
   const balanceRefV = useRef(0);
   const shuffleRef = useRef(false);
   const repeatRef = useRef(false);
+  const currentIdRef = useRef(null);
+  const sourceRef = useRef("");
+  const sourceTokenRef = useRef(0);
+  const playbackStatusRef = useRef("idle");
+  const intentRef = useRef("cue");
+  const suppressPauseRef = useRef(false);
+  const setPlaybackStatus = useCallback((status) => {
+    playbackStatusRef.current = status;
+    setPlaybackStatusState(status);
+  }, []);
   const dbToGain = (db) => 10 ** (db / 20);
   const playable = useMemo(() => tracks.filter((t) => t.audioUrl), [tracks]);
   const current = currentId ? tracks.find((t) => t.id === currentId) ?? null : null;
@@ -149,34 +161,77 @@ function PlayerProvider({
     },
     [onNowPlaying]
   );
+  const attemptPlay = useCallback(() => {
+    const el = audioRef.current;
+    const trackId = currentIdRef.current;
+    const token = sourceTokenRef.current;
+    if (!el || !trackId) return;
+    void ctxRef.current?.resume();
+    try {
+      const result = el.play();
+      void result?.catch(() => {
+        if (token !== sourceTokenRef.current || trackId !== currentIdRef.current) return;
+        setPlaybackStatus("error");
+        setPlaybackError({ trackId, code: "play" });
+        setPlaying(false);
+      });
+    } catch {
+      if (token !== sourceTokenRef.current || trackId !== currentIdRef.current) return;
+      setPlaybackStatus("error");
+      setPlaybackError({ trackId, code: "play" });
+      setPlaying(false);
+    }
+  }, [setPlaybackStatus]);
+  const selectTrack = useCallback(
+    (t, intent, reload) => {
+      const el = audioRef.current;
+      if (!el || !t.audioUrl) return;
+      sourceTokenRef.current += 1;
+      currentIdRef.current = t.id;
+      intentRef.current = intent;
+      sourceRef.current = t.audioUrl;
+      setCurrentId(t.id);
+      setTime(0);
+      setDuration(0);
+      setPlaying(false);
+      setPlaybackError(null);
+      setPlaybackStatus("loading");
+      suppressPauseRef.current = true;
+      if (reload || el.src !== t.audioUrl) el.src = t.audioUrl;
+      sourceRef.current = el.currentSrc || el.src || t.audioUrl;
+      try {
+        el.load();
+      } catch {
+      }
+      driveScene(t);
+      if (intent === "play") attemptPlay();
+    },
+    [attemptPlay, driveScene, setPlaybackStatus]
+  );
   const cue = useCallback(
     (id) => {
-      const el = audioRef.current;
-      const t = tracks.find((x) => x.id === id);
-      if (!el || !t?.audioUrl || currentId === id) return;
-      el.src = t.audioUrl;
-      setCurrentId(id);
-      setTime(0);
-      driveScene(t);
+      const t = tracks.find((track) => track.id === id);
+      if (!t?.audioUrl || currentIdRef.current === id) return;
+      selectTrack(t, "cue", false);
     },
-    [tracks, currentId, driveScene]
+    [tracks, selectTrack]
   );
   const playTrack = useCallback(
     (id) => {
-      const el = audioRef.current;
-      const t = tracks.find((x) => x.id === id);
-      if (!el || !t?.audioUrl) return;
+      const t = tracks.find((track) => track.id === id);
+      if (!t?.audioUrl) return;
       ensureGraph();
-      void ctxRef.current?.resume();
-      if (currentId !== id) {
-        el.src = t.audioUrl;
-        setCurrentId(id);
-        setTime(0);
+      if (currentIdRef.current !== id) {
+        selectTrack(t, "play", false);
+        return;
       }
+      intentRef.current = "play";
+      setPlaybackError(null);
+      setPlaybackStatus("loading");
       driveScene(t);
-      void el.play();
+      attemptPlay();
     },
-    [tracks, currentId, ensureGraph, driveScene]
+    [attemptPlay, driveScene, ensureGraph, selectTrack, setPlaybackStatus, tracks]
   );
   const toggle = useCallback(() => {
     const el = audioRef.current;
@@ -186,12 +241,20 @@ function PlayerProvider({
       return;
     }
     if (el.paused) {
-      void ctxRef.current?.resume();
-      void el.play();
+      intentRef.current = "play";
+      setPlaybackError(null);
+      setPlaybackStatus("loading");
+      attemptPlay();
     } else {
       el.pause();
     }
-  }, [currentId, playable, playTrack]);
+  }, [attemptPlay, currentId, playable, playTrack, setPlaybackStatus]);
+  const retry = useCallback(() => {
+    const id = currentIdRef.current;
+    const t = id ? tracks.find((track) => track.id === id) : null;
+    if (!t?.audioUrl) return;
+    selectTrack(t, intentRef.current, true);
+  }, [selectTrack, tracks]);
   const step = useCallback(
     (dir) => {
       if (playable.length === 0) return;
@@ -250,36 +313,98 @@ function PlayerProvider({
     const el = audioRef.current;
     if (!el) return;
     el.volume = volume;
-    const onTime = () => setTime(el.currentTime);
-    const onDur = () => setDuration(Number.isFinite(el.duration) ? el.duration : 0);
-    const onPlay = () => setPlaying(true);
-    const onPause = () => setPlaying(false);
-    const onEnded = () => {
+    const isCurrentMediaEvent = (event) => {
+      const currentSource = sourceRef.current;
+      if (!currentSource || !currentIdRef.current) return false;
+      const detail = event.detail;
+      const activeSource = el.currentSrc || el.src;
+      if (detail?.src && detail.src !== currentSource && !currentSource.endsWith(detail.src)) return false;
+      return Boolean(activeSource) && (activeSource === currentSource || currentSource.endsWith(activeSource));
+    };
+    const onTime = () => {
+      if (currentIdRef.current) setTime(el.currentTime);
+    };
+    const onDur = () => {
+      if (currentIdRef.current) setDuration(Number.isFinite(el.duration) ? el.duration : 0);
+    };
+    const onLoadStart = (event) => {
+      if (!isCurrentMediaEvent(event)) return;
+      setPlaybackError(null);
+      setPlaybackStatus("loading");
+    };
+    const onCanPlay = (event) => {
+      if (!isCurrentMediaEvent(event)) return;
+      suppressPauseRef.current = false;
+      if (playbackStatusRef.current === "error") return;
+      if (playbackStatusRef.current !== "playing") setPlaybackStatus("ready");
+    };
+    const onPlay = (event) => {
+      if (!isCurrentMediaEvent(event)) return;
+      suppressPauseRef.current = false;
+      setPlaying(true);
+      setPlaybackError(null);
+      setPlaybackStatus("playing");
+    };
+    const onPause = (event) => {
+      if (!isCurrentMediaEvent(event)) return;
+      setPlaying(false);
+      if (suppressPauseRef.current) return;
+      if (playbackStatusRef.current !== "error") {
+        setPlaybackStatus(currentIdRef.current ? "paused" : "idle");
+      }
+    };
+    const onBuffering = (event) => {
+      if (!isCurrentMediaEvent(event)) return;
+      setPlaybackStatus("loading");
+    };
+    const onError = (event) => {
+      if (!isCurrentMediaEvent(event)) return;
+      const trackId = currentIdRef.current;
+      if (!trackId) return;
+      setPlaying(false);
+      setPlaybackStatus("error");
+      setPlaybackError({ trackId, code: "load" });
+    };
+    const onEnded = (event) => {
+      if (!isCurrentMediaEvent(event)) return;
       if (repeatRef.current) {
         el.currentTime = 0;
-        void el.play();
+        intentRef.current = "play";
+        attemptPlay();
       } else {
         step(1);
       }
     };
     el.addEventListener("timeupdate", onTime);
     el.addEventListener("durationchange", onDur);
+    el.addEventListener("loadstart", onLoadStart);
+    el.addEventListener("canplay", onCanPlay);
     el.addEventListener("play", onPlay);
     el.addEventListener("pause", onPause);
+    el.addEventListener("waiting", onBuffering);
+    el.addEventListener("stalled", onBuffering);
+    el.addEventListener("error", onError);
     el.addEventListener("ended", onEnded);
     return () => {
       el.removeEventListener("timeupdate", onTime);
       el.removeEventListener("durationchange", onDur);
+      el.removeEventListener("loadstart", onLoadStart);
+      el.removeEventListener("canplay", onCanPlay);
       el.removeEventListener("play", onPlay);
       el.removeEventListener("pause", onPause);
+      el.removeEventListener("waiting", onBuffering);
+      el.removeEventListener("stalled", onBuffering);
+      el.removeEventListener("error", onError);
       el.removeEventListener("ended", onEnded);
     };
-  }, [step, volume]);
+  }, [attemptPlay, setPlaybackStatus, step, volume]);
   const value = useMemo(
     () => ({
       allTracks: tracks,
       currentId,
       playing,
+      playbackStatus,
+      playbackError,
       time,
       duration,
       volume,
@@ -300,6 +425,7 @@ function PlayerProvider({
       setRepeat,
       cue,
       playTrack,
+      retry,
       toggle,
       next,
       prev,
@@ -310,6 +436,8 @@ function PlayerProvider({
       tracks,
       currentId,
       playing,
+      playbackStatus,
+      playbackError,
       time,
       duration,
       volume,
@@ -330,6 +458,7 @@ function PlayerProvider({
       setRepeat,
       cue,
       playTrack,
+      retry,
       toggle,
       next,
       prev,
@@ -1006,6 +1135,26 @@ function TransportControls({
     )
   ] });
 }
+function PlaybackStatusMessage({
+  status,
+  error,
+  onRetry
+}) {
+  if (status !== "loading" && !error) return null;
+  const failed = Boolean(error);
+  return /* @__PURE__ */ jsxs(
+    "div",
+    {
+      className: `deck-playback-status${failed ? " is-error" : ""}`,
+      role: failed ? "alert" : "status",
+      "aria-live": failed ? "assertive" : "polite",
+      children: [
+        /* @__PURE__ */ jsx("span", { children: failed ? "Unable to play this track." : "Loading track\u2026" }),
+        failed && /* @__PURE__ */ jsx("button", { type: "button", className: "deck-retry", onClick: onRetry, children: "Retry" })
+      ]
+    }
+  );
+}
 function useDeckWindowState({
   storageKey,
   setEqGains
@@ -1131,6 +1280,8 @@ function WinampPlayer({
     allTracks,
     currentId,
     playing,
+    playbackStatus,
+    playbackError,
     time,
     duration,
     volume,
@@ -1140,6 +1291,7 @@ function WinampPlayer({
     setEqGains,
     cue,
     playTrack,
+    retry,
     toggle,
     next,
     prev,
@@ -1370,6 +1522,14 @@ function WinampPlayer({
                 showRemaining,
                 spectrumColors: spectrum,
                 time
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              PlaybackStatusMessage,
+              {
+                status: playbackStatus,
+                error: playbackError,
+                onRetry: retry
               }
             ),
             /* @__PURE__ */ jsx(
@@ -2025,6 +2185,39 @@ function ClassicVisualizer({
     }
   );
 }
+function ClassicPlaybackStatus({
+  status,
+  error,
+  onRetry
+}) {
+  if (status !== "loading" && !error) return null;
+  const failed = Boolean(error);
+  return /* @__PURE__ */ jsxs(
+    "div",
+    {
+      role: failed ? "alert" : "status",
+      "aria-live": failed ? "assertive" : "polite",
+      style: {
+        position: "absolute",
+        left: 15,
+        top: 16,
+        zIndex: 5,
+        display: "flex",
+        alignItems: "center",
+        gap: 5,
+        padding: "2px 4px",
+        color: failed ? "#ff9d9d" : "#fcd117",
+        background: "rgba(0, 0, 0, 0.9)",
+        border: `1px solid ${failed ? "#8b4545" : "#756314"}`,
+        font: "9px ui-monospace, monospace"
+      },
+      children: [
+        /* @__PURE__ */ jsx("span", { children: failed ? "Unable to play this track." : "Loading track\u2026" }),
+        failed && /* @__PURE__ */ jsx("button", { type: "button", onClick: onRetry, children: "Retry" })
+      ]
+    }
+  );
+}
 function usePersistedState(key, initial) {
   const [value, setValue] = useState(() => {
     if (typeof window === "undefined" || !key) return initial;
@@ -2075,6 +2268,8 @@ function ClassicWinampPlayer({
   const { skin, status } = useSkin(skinUrl);
   const {
     playing,
+    playbackStatus,
+    playbackError,
     time,
     duration,
     volume,
@@ -2091,7 +2286,8 @@ function ClassicWinampPlayer({
     setVolume,
     setBalance,
     setShuffle,
-    setRepeat
+    setRepeat,
+    retry
   } = usePlayer();
   const [shade, setShade] = usePersistedState(`${storageKey}:shade`, false);
   const [doubleSize, setDoubleSize] = usePersistedState(
@@ -2153,7 +2349,7 @@ function ClassicWinampPlayer({
       "aria-label": `Classic Winamp player, ${status} skin`,
       "aria-busy": status === "loading",
       style: { width: MAIN_WIDTH * s, height: height * s },
-      children: /* @__PURE__ */ jsx(
+      children: /* @__PURE__ */ jsxs(
         "div",
         {
           style: {
@@ -2164,117 +2360,127 @@ function ClassicWinampPlayer({
             transformOrigin: "top left",
             imageRendering: "pixelated"
           },
-          children: shade ? /* @__PURE__ */ jsxs(Fragment, { children: [
-            /* @__PURE__ */ jsx(Sprite, { name: "MAIN_SHADE_BACKGROUND_SELECTED", style: placed(0, 0) }),
-            /* @__PURE__ */ jsx(Sprite, { name: "MAIN_OPTIONS_BUTTON", style: placed(6, 3) }),
-            /* @__PURE__ */ jsx("div", { style: { position: "absolute", left: 130, top: 4 }, children: /* @__PURE__ */ jsx(BitmapText, { text: fmtTime(time) }) }),
-            dblToggle,
-            shadeButton,
-            closeBtn
-          ] }) : /* @__PURE__ */ jsxs(Fragment, { children: [
-            /* @__PURE__ */ jsx(Sprite, { name: "MAIN_WINDOW_BACKGROUND", style: placed(0, 0) }),
-            STATIC.map(([name, left, top]) => /* @__PURE__ */ jsx(Sprite, { name, style: placed(left, top) }, name)),
+          children: [
             /* @__PURE__ */ jsx(
-              Sprite,
+              ClassicPlaybackStatus,
               {
-                name: playing ? "MAIN_PLAYING_INDICATOR" : "MAIN_STOPPED_INDICATOR",
-                style: placed(26, 28)
+                status: playbackStatus,
+                error: playbackError,
+                onRetry: retry
               }
             ),
-            /* @__PURE__ */ jsx(ClassicVisualizer, { analyser }),
-            /* @__PURE__ */ jsx(TimeDisplay, { seconds: time }),
-            /* @__PURE__ */ jsx(Marquee, { text: title }),
-            dblToggle,
-            shadeButton,
-            closeBtn,
-            /* @__PURE__ */ jsx(
-              Slider,
-              {
-                background: "MAIN_POSITION_SLIDER_BACKGROUND",
-                thumb: "MAIN_POSITION_SLIDER_THUMB",
-                thumbActive: "MAIN_POSITION_SLIDER_THUMB_SELECTED",
-                value: position,
-                onChange: (v) => duration > 0 && seek(v * duration),
-                ariaLabel: "Seek",
-                ariaValueMin: 0,
-                ariaValueMax: duration,
-                ariaValueNow: time,
-                ariaValueText: `${fmtTime(time)} of ${fmtTime(duration)}`,
-                keyboardStep: duration > 0 ? 1 / duration : 0.05,
-                trackWidth: 248,
-                trackHeight: 10,
-                style: placed(16, 72)
-              }
-            ),
-            /* @__PURE__ */ jsx(
-              Slider,
-              {
-                background: "MAIN_VOLUME_BACKGROUND",
-                thumb: "MAIN_VOLUME_THUMB",
-                thumbActive: "MAIN_VOLUME_THUMB_SELECTED",
-                value: volume,
-                onChange: setVolume,
-                ariaLabel: "Volume",
-                ariaValueMin: 0,
-                ariaValueMax: 100,
-                ariaValueNow: Math.round(volume * 100),
-                ariaValueText: `${Math.round(volume * 100)}%`,
-                keyboardStep: 0.01,
-                trackWidth: 68,
-                trackHeight: 13,
-                frames: 28,
-                frameHeight: 15,
-                style: placed(107, 57)
-              }
-            ),
-            /* @__PURE__ */ jsx(
-              Slider,
-              {
-                thumb: "MAIN_BALANCE_THUMB",
-                thumbActive: "MAIN_BALANCE_THUMB_ACTIVE",
-                value: (balance + 1) / 2,
-                onChange: (v) => setBalance(v * 2 - 1),
-                ariaLabel: "Balance",
-                ariaValueMin: -1,
-                ariaValueMax: 1,
-                ariaValueNow: balance,
-                ariaValueText: balanceText(balance),
-                keyboardStep: 0.025,
-                trackWidth: 38,
-                trackHeight: 13,
-                style: placed(177, 57)
-              }
-            ),
-            /* @__PURE__ */ jsx(
-              SpriteButton,
-              {
-                up: shuffle ? "MAIN_SHUFFLE_BUTTON_SELECTED" : "MAIN_SHUFFLE_BUTTON",
-                down: shuffle ? "MAIN_SHUFFLE_BUTTON" : "MAIN_SHUFFLE_BUTTON_SELECTED",
-                onClick: () => setShuffle(!shuffle),
-                title: shuffle ? "Shuffle on" : "Shuffle off",
-                ariaLabel: "Toggle shuffle",
-                ariaPressed: shuffle,
-                style: placed(164, 89)
-              }
-            ),
-            /* @__PURE__ */ jsx(
-              SpriteButton,
-              {
-                up: repeat ? "MAIN_REPEAT_BUTTON_SELECTED" : "MAIN_REPEAT_BUTTON",
-                down: repeat ? "MAIN_REPEAT_BUTTON" : "MAIN_REPEAT_BUTTON_SELECTED",
-                onClick: () => setRepeat(!repeat),
-                title: repeat ? "Repeat on" : "Repeat off",
-                ariaLabel: "Toggle repeat",
-                ariaPressed: repeat,
-                style: placed(210, 89)
-              }
-            ),
-            /* @__PURE__ */ jsx(SpriteButton, { up: "MAIN_PREVIOUS_BUTTON", down: "MAIN_PREVIOUS_BUTTON_ACTIVE", onClick: prev, title: "Previous", style: placed(16, 88) }),
-            /* @__PURE__ */ jsx(SpriteButton, { up: "MAIN_PLAY_BUTTON", down: "MAIN_PLAY_BUTTON_ACTIVE", onClick: play, title: "Play", style: placed(39, 88) }),
-            /* @__PURE__ */ jsx(SpriteButton, { up: "MAIN_PAUSE_BUTTON", down: "MAIN_PAUSE_BUTTON_ACTIVE", onClick: pause, title: "Pause", style: placed(62, 88) }),
-            /* @__PURE__ */ jsx(SpriteButton, { up: "MAIN_STOP_BUTTON", down: "MAIN_STOP_BUTTON_ACTIVE", onClick: stop, title: "Stop", style: placed(85, 88) }),
-            /* @__PURE__ */ jsx(SpriteButton, { up: "MAIN_NEXT_BUTTON", down: "MAIN_NEXT_BUTTON_ACTIVE", onClick: next, title: "Next", style: placed(108, 88) })
-          ] })
+            shade ? /* @__PURE__ */ jsxs(Fragment, { children: [
+              /* @__PURE__ */ jsx(Sprite, { name: "MAIN_SHADE_BACKGROUND_SELECTED", style: placed(0, 0) }),
+              /* @__PURE__ */ jsx(Sprite, { name: "MAIN_OPTIONS_BUTTON", style: placed(6, 3) }),
+              /* @__PURE__ */ jsx("div", { style: { position: "absolute", left: 130, top: 4 }, children: /* @__PURE__ */ jsx(BitmapText, { text: fmtTime(time) }) }),
+              dblToggle,
+              shadeButton,
+              closeBtn
+            ] }) : /* @__PURE__ */ jsxs(Fragment, { children: [
+              /* @__PURE__ */ jsx(Sprite, { name: "MAIN_WINDOW_BACKGROUND", style: placed(0, 0) }),
+              STATIC.map(([name, left, top]) => /* @__PURE__ */ jsx(Sprite, { name, style: placed(left, top) }, name)),
+              /* @__PURE__ */ jsx(
+                Sprite,
+                {
+                  name: playing ? "MAIN_PLAYING_INDICATOR" : "MAIN_STOPPED_INDICATOR",
+                  style: placed(26, 28)
+                }
+              ),
+              /* @__PURE__ */ jsx(ClassicVisualizer, { analyser }),
+              /* @__PURE__ */ jsx(TimeDisplay, { seconds: time }),
+              /* @__PURE__ */ jsx(Marquee, { text: title }),
+              dblToggle,
+              shadeButton,
+              closeBtn,
+              /* @__PURE__ */ jsx(
+                Slider,
+                {
+                  background: "MAIN_POSITION_SLIDER_BACKGROUND",
+                  thumb: "MAIN_POSITION_SLIDER_THUMB",
+                  thumbActive: "MAIN_POSITION_SLIDER_THUMB_SELECTED",
+                  value: position,
+                  onChange: (v) => duration > 0 && seek(v * duration),
+                  ariaLabel: "Seek",
+                  ariaValueMin: 0,
+                  ariaValueMax: duration,
+                  ariaValueNow: time,
+                  ariaValueText: `${fmtTime(time)} of ${fmtTime(duration)}`,
+                  keyboardStep: duration > 0 ? 1 / duration : 0.05,
+                  trackWidth: 248,
+                  trackHeight: 10,
+                  style: placed(16, 72)
+                }
+              ),
+              /* @__PURE__ */ jsx(
+                Slider,
+                {
+                  background: "MAIN_VOLUME_BACKGROUND",
+                  thumb: "MAIN_VOLUME_THUMB",
+                  thumbActive: "MAIN_VOLUME_THUMB_SELECTED",
+                  value: volume,
+                  onChange: setVolume,
+                  ariaLabel: "Volume",
+                  ariaValueMin: 0,
+                  ariaValueMax: 100,
+                  ariaValueNow: Math.round(volume * 100),
+                  ariaValueText: `${Math.round(volume * 100)}%`,
+                  keyboardStep: 0.01,
+                  trackWidth: 68,
+                  trackHeight: 13,
+                  frames: 28,
+                  frameHeight: 15,
+                  style: placed(107, 57)
+                }
+              ),
+              /* @__PURE__ */ jsx(
+                Slider,
+                {
+                  thumb: "MAIN_BALANCE_THUMB",
+                  thumbActive: "MAIN_BALANCE_THUMB_ACTIVE",
+                  value: (balance + 1) / 2,
+                  onChange: (v) => setBalance(v * 2 - 1),
+                  ariaLabel: "Balance",
+                  ariaValueMin: -1,
+                  ariaValueMax: 1,
+                  ariaValueNow: balance,
+                  ariaValueText: balanceText(balance),
+                  keyboardStep: 0.025,
+                  trackWidth: 38,
+                  trackHeight: 13,
+                  style: placed(177, 57)
+                }
+              ),
+              /* @__PURE__ */ jsx(
+                SpriteButton,
+                {
+                  up: shuffle ? "MAIN_SHUFFLE_BUTTON_SELECTED" : "MAIN_SHUFFLE_BUTTON",
+                  down: shuffle ? "MAIN_SHUFFLE_BUTTON" : "MAIN_SHUFFLE_BUTTON_SELECTED",
+                  onClick: () => setShuffle(!shuffle),
+                  title: shuffle ? "Shuffle on" : "Shuffle off",
+                  ariaLabel: "Toggle shuffle",
+                  ariaPressed: shuffle,
+                  style: placed(164, 89)
+                }
+              ),
+              /* @__PURE__ */ jsx(
+                SpriteButton,
+                {
+                  up: repeat ? "MAIN_REPEAT_BUTTON_SELECTED" : "MAIN_REPEAT_BUTTON",
+                  down: repeat ? "MAIN_REPEAT_BUTTON" : "MAIN_REPEAT_BUTTON_SELECTED",
+                  onClick: () => setRepeat(!repeat),
+                  title: repeat ? "Repeat on" : "Repeat off",
+                  ariaLabel: "Toggle repeat",
+                  ariaPressed: repeat,
+                  style: placed(210, 89)
+                }
+              ),
+              /* @__PURE__ */ jsx(SpriteButton, { up: "MAIN_PREVIOUS_BUTTON", down: "MAIN_PREVIOUS_BUTTON_ACTIVE", onClick: prev, title: "Previous", style: placed(16, 88) }),
+              /* @__PURE__ */ jsx(SpriteButton, { up: "MAIN_PLAY_BUTTON", down: "MAIN_PLAY_BUTTON_ACTIVE", onClick: play, title: "Play", style: placed(39, 88) }),
+              /* @__PURE__ */ jsx(SpriteButton, { up: "MAIN_PAUSE_BUTTON", down: "MAIN_PAUSE_BUTTON_ACTIVE", onClick: pause, title: "Pause", style: placed(62, 88) }),
+              /* @__PURE__ */ jsx(SpriteButton, { up: "MAIN_STOP_BUTTON", down: "MAIN_STOP_BUTTON_ACTIVE", onClick: stop, title: "Stop", style: placed(85, 88) }),
+              /* @__PURE__ */ jsx(SpriteButton, { up: "MAIN_NEXT_BUTTON", down: "MAIN_NEXT_BUTTON_ACTIVE", onClick: next, title: "Next", style: placed(108, 88) })
+            ] })
+          ]
         }
       )
     }
@@ -2478,7 +2684,14 @@ function ClassicPlaylistWindow({
   storageKey = "classicPlaylist"
 }) {
   const { skin, status } = useSkin(skinUrl);
-  const { allTracks, currentId, playTrack } = usePlayer();
+  const {
+    allTracks,
+    currentId,
+    playTrack,
+    playbackStatus,
+    playbackError,
+    retry
+  } = usePlayer();
   const [shade, setShade] = usePersistedState(`${storageKey}:shade`, false);
   const colors = skin?.colors;
   const normal = colors?.playlistNormal ?? "#00ff00";
@@ -2513,7 +2726,7 @@ function ClassicPlaylistWindow({
       "aria-label": `Classic Winamp playlist, ${status} skin`,
       "aria-busy": status === "loading",
       style: { width: W2 * scale, height: height * scale },
-      children: /* @__PURE__ */ jsx(
+      children: /* @__PURE__ */ jsxs(
         "div",
         {
           style: {
@@ -2524,78 +2737,88 @@ function ClassicPlaylistWindow({
             transformOrigin: "top left",
             imageRendering: "pixelated"
           },
-          children: shade ? /* @__PURE__ */ jsxs(Fragment, { children: [
-            /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_SHADE_LEFT", left: 0, top: 0, width: 25, height: SHADE_H2, repeat: "no-repeat" }),
-            /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_SHADE_CENTER", left: 25, top: 0, width: W2 - 75, height: SHADE_H2, repeat: "repeat-x" }),
-            /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_SHADE_RIGHT", left: W2 - 50, top: 0, width: 50, height: SHADE_H2, repeat: "no-repeat" }),
-            shadeToggle
-          ] }) : /* @__PURE__ */ jsxs(Fragment, { children: [
-            /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_TOP_TILE_SELECTED", left: 0, top: 0, width: W2, height: TOP_H, repeat: "repeat-x" }),
-            /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_TOP_LEFT_SELECTED", left: 0, top: 0, width: 25, height: TOP_H, repeat: "no-repeat" }),
-            /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_TITLE_BAR_SELECTED", left: titleLeft, top: 0, width: TITLE_W, height: TOP_H, repeat: "no-repeat" }),
-            /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_TOP_RIGHT_CORNER_SELECTED", left: W2 - 25, top: 0, width: 25, height: TOP_H, repeat: "no-repeat" }),
-            shadeToggle,
-            /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_LEFT_TILE", left: 0, top: TOP_H, width: LEFT_W, height: H2 - TOP_H - BOTTOM_H, repeat: "repeat-y" }),
-            /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_RIGHT_TILE", left: W2 - RIGHT_W, top: TOP_H, width: RIGHT_W, height: H2 - TOP_H - BOTTOM_H, repeat: "repeat-y" }),
-            /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_BOTTOM_LEFT_CORNER", left: 0, top: H2 - BOTTOM_H, width: 125, height: BOTTOM_H, repeat: "no-repeat" }),
-            /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_BOTTOM_RIGHT_CORNER", left: 125, top: H2 - BOTTOM_H, width: 150, height: BOTTOM_H, repeat: "no-repeat" }),
+          children: [
             /* @__PURE__ */ jsx(
-              "div",
+              ClassicPlaybackStatus,
               {
-                role: "list",
-                "aria-label": `Playlist tracks, ${allTracks.length} total`,
-                style: {
-                  position: "absolute",
-                  left: LEFT_W,
-                  top: TOP_H,
-                  width: W2 - LEFT_W - RIGHT_W,
-                  height: H2 - TOP_H - BOTTOM_H,
-                  background: bg,
-                  overflowY: "auto",
-                  font: "9px ui-monospace, monospace",
-                  lineHeight: "10px",
-                  whiteSpace: "nowrap"
-                },
-                children: allTracks.map((t, i) => {
-                  const isCurrent = t.id === currentId;
-                  const playable = !!t.audioUrl;
-                  return /* @__PURE__ */ jsx("div", { role: "listitem", "aria-setsize": allTracks.length, "aria-posinset": i + 1, children: /* @__PURE__ */ jsxs(
-                    "div",
-                    {
-                      role: "button",
-                      tabIndex: playable ? 0 : -1,
-                      "aria-disabled": !playable || void 0,
-                      "aria-current": isCurrent || void 0,
-                      "aria-label": `${t.number}. ${t.title} - ${t.person}${isCurrent ? ", current track" : ""}${!playable ? ", unavailable" : ""}`,
-                      onClick: () => playable && playTrack(t.id),
-                      onKeyDown: (e) => {
-                        if (!playable || e.key !== "Enter" && e.key !== " ") return;
-                        e.preventDefault();
-                        playTrack(t.id);
-                      },
-                      title: `${t.title} - ${t.person}`,
-                      style: {
-                        padding: "0 3px",
-                        color: isCurrent ? current : normal,
-                        background: isCurrent ? selectedBg : void 0,
-                        opacity: playable ? 1 : 0.5,
-                        cursor: playable ? "pointer" : "default",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis"
-                      },
-                      children: [
-                        t.number,
-                        ". ",
-                        t.title,
-                        " - ",
-                        t.person
-                      ]
-                    }
-                  ) }, t.id);
-                })
+                status: playbackStatus,
+                error: playbackError,
+                onRetry: retry
               }
-            )
-          ] })
+            ),
+            shade ? /* @__PURE__ */ jsxs(Fragment, { children: [
+              /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_SHADE_LEFT", left: 0, top: 0, width: 25, height: SHADE_H2, repeat: "no-repeat" }),
+              /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_SHADE_CENTER", left: 25, top: 0, width: W2 - 75, height: SHADE_H2, repeat: "repeat-x" }),
+              /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_SHADE_RIGHT", left: W2 - 50, top: 0, width: 50, height: SHADE_H2, repeat: "no-repeat" }),
+              shadeToggle
+            ] }) : /* @__PURE__ */ jsxs(Fragment, { children: [
+              /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_TOP_TILE_SELECTED", left: 0, top: 0, width: W2, height: TOP_H, repeat: "repeat-x" }),
+              /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_TOP_LEFT_SELECTED", left: 0, top: 0, width: 25, height: TOP_H, repeat: "no-repeat" }),
+              /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_TITLE_BAR_SELECTED", left: titleLeft, top: 0, width: TITLE_W, height: TOP_H, repeat: "no-repeat" }),
+              /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_TOP_RIGHT_CORNER_SELECTED", left: W2 - 25, top: 0, width: 25, height: TOP_H, repeat: "no-repeat" }),
+              shadeToggle,
+              /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_LEFT_TILE", left: 0, top: TOP_H, width: LEFT_W, height: H2 - TOP_H - BOTTOM_H, repeat: "repeat-y" }),
+              /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_RIGHT_TILE", left: W2 - RIGHT_W, top: TOP_H, width: RIGHT_W, height: H2 - TOP_H - BOTTOM_H, repeat: "repeat-y" }),
+              /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_BOTTOM_LEFT_CORNER", left: 0, top: H2 - BOTTOM_H, width: 125, height: BOTTOM_H, repeat: "no-repeat" }),
+              /* @__PURE__ */ jsx(Tile, { name: "PLAYLIST_BOTTOM_RIGHT_CORNER", left: 125, top: H2 - BOTTOM_H, width: 150, height: BOTTOM_H, repeat: "no-repeat" }),
+              /* @__PURE__ */ jsx(
+                "div",
+                {
+                  role: "list",
+                  "aria-label": `Playlist tracks, ${allTracks.length} total`,
+                  style: {
+                    position: "absolute",
+                    left: LEFT_W,
+                    top: TOP_H,
+                    width: W2 - LEFT_W - RIGHT_W,
+                    height: H2 - TOP_H - BOTTOM_H,
+                    background: bg,
+                    overflowY: "auto",
+                    font: "9px ui-monospace, monospace",
+                    lineHeight: "10px",
+                    whiteSpace: "nowrap"
+                  },
+                  children: allTracks.map((t, i) => {
+                    const isCurrent = t.id === currentId;
+                    const playable = !!t.audioUrl;
+                    return /* @__PURE__ */ jsx("div", { role: "listitem", "aria-setsize": allTracks.length, "aria-posinset": i + 1, children: /* @__PURE__ */ jsxs(
+                      "div",
+                      {
+                        role: "button",
+                        tabIndex: playable ? 0 : -1,
+                        "aria-disabled": !playable || void 0,
+                        "aria-current": isCurrent || void 0,
+                        "aria-label": `${t.number}. ${t.title} - ${t.person}${isCurrent ? ", current track" : ""}${!playable ? ", unavailable" : ""}`,
+                        onClick: () => playable && playTrack(t.id),
+                        onKeyDown: (e) => {
+                          if (!playable || e.key !== "Enter" && e.key !== " ") return;
+                          e.preventDefault();
+                          playTrack(t.id);
+                        },
+                        title: `${t.title} - ${t.person}`,
+                        style: {
+                          padding: "0 3px",
+                          color: isCurrent ? current : normal,
+                          background: isCurrent ? selectedBg : void 0,
+                          opacity: playable ? 1 : 0.5,
+                          cursor: playable ? "pointer" : "default",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis"
+                        },
+                        children: [
+                          t.number,
+                          ". ",
+                          t.title,
+                          " - ",
+                          t.person
+                        ]
+                      }
+                    ) }, t.id);
+                  })
+                }
+              )
+            ] })
+          ]
         }
       )
     }

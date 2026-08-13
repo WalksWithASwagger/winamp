@@ -9,7 +9,11 @@ import { THEMES, type DeckTheme } from "./themes";
 import { usePlayerKeyboardShortcuts } from "./usePlayerKeyboardShortcuts";
 import { EqualizerPanel } from "./modernDeck/EqualizerPanel";
 import { PlaylistPanel } from "./modernDeck/PlaylistPanel";
-import { DeckDisplay, TransportControls } from "./modernDeck/Transport";
+import {
+  DeckDisplay,
+  PlaybackStatusMessage,
+  TransportControls,
+} from "./modernDeck/Transport";
 import { useDeckWindowState } from "./modernDeck/useDeckWindowState";
 
 const DEFAULT_SPECTRUM_COLORS = ["#f47a52", "#fcd117", "#6dcad0", "#9b7bff", "#eaa8cb"];
@@ -35,6 +39,8 @@ export function WinampPlayer({
     allTracks,
     currentId,
     playing,
+    playbackStatus,
+    playbackError,
     time,
     duration,
     volume,
@@ -44,6 +50,7 @@ export function WinampPlayer({
     setEqGains,
     cue,
     playTrack,
+    retry,
     toggle,
     next,
     prev,
@@ -268,6 +275,12 @@ export function WinampPlayer({
               showRemaining={showRemaining}
               spectrumColors={spectrum}
               time={time}
+            />
+
+            <PlaybackStatusMessage
+              status={playbackStatus}
+              error={playbackError}
+              onRetry={retry}
             />
 
             <TransportControls

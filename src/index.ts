@@ -5,7 +5,13 @@ export { usePlayerKeyboardShortcuts } from "./usePlayerKeyboardShortcuts";
 export type { KeyboardShortcutOptions } from "./usePlayerKeyboardShortcuts";
 export { THEMES } from "./themes";
 export type { DeckTheme, ThemePack } from "./themes";
-export type { PlayerTrack, NowPlaying } from "./types";
+export type {
+  PlayerTrack,
+  NowPlaying,
+  PlaybackStatus,
+  PlaybackErrorCode,
+  PlaybackError,
+} from "./types";
 
 // Classic `.wsz` skin engine (sprite-based UI built on the same PlayerProvider).
 export { parseSkin, parseViscolor, parsePledit } from "./classic/skinParser";

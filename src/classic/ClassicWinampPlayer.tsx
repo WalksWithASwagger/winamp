@@ -8,6 +8,7 @@ import { Sprite, SpriteButton } from "./Sprite";
 import { Slider } from "./Slider";
 import { BitmapText, Marquee, TimeDisplay } from "./readouts";
 import { ClassicVisualizer } from "./ClassicVisualizer";
+import { ClassicPlaybackStatus } from "./PlaybackStatus";
 import { usePersistedState } from "./usePersistedState";
 import type { SpriteName } from "./skinSprites";
 
@@ -61,6 +62,8 @@ export function ClassicWinampPlayer({
   const { skin, status } = useSkin(skinUrl);
   const {
     playing,
+    playbackStatus,
+    playbackError,
     time,
     duration,
     volume,
@@ -78,6 +81,7 @@ export function ClassicWinampPlayer({
     setBalance,
     setShuffle,
     setRepeat,
+    retry,
   } = usePlayer();
 
   const [shade, setShade] = usePersistedState(`${storageKey}:shade`, false);
@@ -157,6 +161,11 @@ export function ClassicWinampPlayer({
             imageRendering: "pixelated",
           }}
         >
+          <ClassicPlaybackStatus
+            status={playbackStatus}
+            error={playbackError}
+            onRetry={retry}
+          />
           {shade ? (
             <>
               <Sprite name="MAIN_SHADE_BACKGROUND_SELECTED" style={placed(0, 0)} />

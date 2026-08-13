@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from "react";
 import type { PlayerTrack } from "../types";
+import type { PlaybackError, PlaybackStatus } from "../types";
 import { Spectrum } from "./Spectrum";
 
 export function formatDeckTime(s: number): string {
@@ -133,6 +134,33 @@ export function TransportControls({
         aria-valuetext={`${Math.round(volume * 100)}%`}
         title="Volume"
       />
+    </div>
+  );
+}
+
+export function PlaybackStatusMessage({
+  status,
+  error,
+  onRetry,
+}: {
+  status: PlaybackStatus;
+  error: PlaybackError | null;
+  onRetry: () => void;
+}) {
+  if (status !== "loading" && !error) return null;
+  const failed = Boolean(error);
+  return (
+    <div
+      className={`deck-playback-status${failed ? " is-error" : ""}`}
+      role={failed ? "alert" : "status"}
+      aria-live={failed ? "assertive" : "polite"}
+    >
+      <span>{failed ? "Unable to play this track." : "Loading track…"}</span>
+      {failed && (
+        <button type="button" className="deck-retry" onClick={onRetry}>
+          Retry
+        </button>
+      )}
     </div>
   );
 }

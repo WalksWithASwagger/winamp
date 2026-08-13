@@ -5,6 +5,7 @@ import { usePlayer } from "../PlayerProvider";
 import { useSkin } from "./useSkin";
 import { SkinProvider, useSkinContext } from "./SkinContext";
 import { usePersistedState } from "./usePersistedState";
+import { ClassicPlaybackStatus } from "./PlaybackStatus";
 import type { SpriteName } from "./skinSprites";
 
 const W = 275;
@@ -67,7 +68,14 @@ export function ClassicPlaylistWindow({
   storageKey?: string;
 }) {
   const { skin, status } = useSkin(skinUrl);
-  const { allTracks, currentId, playTrack } = usePlayer();
+  const {
+    allTracks,
+    currentId,
+    playTrack,
+    playbackStatus,
+    playbackError,
+    retry,
+  } = usePlayer();
   const [shade, setShade] = usePersistedState(`${storageKey}:shade`, false);
 
   const colors = skin?.colors;
@@ -117,6 +125,11 @@ export function ClassicPlaylistWindow({
             imageRendering: "pixelated",
           }}
         >
+          <ClassicPlaybackStatus
+            status={playbackStatus}
+            error={playbackError}
+            onRetry={retry}
+          />
           {shade ? (
             <>
               <Tile name="PLAYLIST_SHADE_LEFT" left={0} top={0} width={25} height={SHADE_H} repeat="no-repeat" />
