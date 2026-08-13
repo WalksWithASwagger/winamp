@@ -60,6 +60,8 @@ export function ClassicVisualizer({
       ref={ref}
       width={VIZ_W}
       height={VIZ_H}
+      role="img"
+      aria-label="Audio spectrum visualizer"
       style={{ position: "absolute", left, top, width: VIZ_W, height: VIZ_H, imageRendering: "pixelated" }}
     />
   );

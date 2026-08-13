@@ -6,7 +6,7 @@ import type {
   PointerEvent as ReactPointerEvent,
   MouseEvent as ReactMouseEvent,
 } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   motion,
   useDragControls,
@@ -93,7 +93,15 @@ function Spectrum({ colors }: { colors: string[] }) {
     return () => cancelAnimationFrame(raf);
   }, [analyser, playing, reduced, colors]);
 
-  return <canvas ref={canvasRef} width={58} height={16} className="deck-spectrum" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      width={58}
+      height={16}
+      className="deck-spectrum"
+      aria-hidden="true"
+    />
+  );
 }
 
 export function WinampPlayer({
@@ -145,6 +153,9 @@ export function WinampPlayer({
   const [canViz, setCanViz] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [easter, setEaster] = useState(false);
+  const deckId = useId();
+  const eqPanelId = `${deckId}-eq`;
+  const playlistId = `${deckId}-playlist`;
   const dragControls = useDragControls();
   const boundsRef = useRef<HTMLDivElement>(null);
   const deckRef = useRef<HTMLElement>(null);
@@ -303,7 +314,8 @@ export function WinampPlayer({
       <motion.section
         ref={deckRef}
         className={`deck${shaded ? " is-shaded" : ""}`}
-        aria-label="Block Party player"
+        role="region"
+        aria-label={`Block Party player${theme ? `, ${theme} skin` : ""}`}
         drag={!isMobile}
         dragControls={dragControls}
         dragListener={false}
@@ -346,6 +358,7 @@ export function WinampPlayer({
               type="button"
               className={`deck-winbtn${vizOpen ? " on" : ""}`}
               aria-pressed={vizOpen}
+              aria-expanded={vizOpen}
               aria-label="Toggle visualizer"
               title="Milkdrop visualizer"
               onClick={() => setVizOpen((v) => !v)}
@@ -357,6 +370,8 @@ export function WinampPlayer({
             type="button"
             className={`deck-winbtn deck-winbtn-eq${eqOpen ? " on" : ""}`}
             aria-pressed={eqOpen}
+            aria-expanded={eqOpen}
+            aria-controls={eqPanelId}
             aria-label="Toggle equalizer"
             title="Equalizer"
             onClick={() => setEqOpen((v) => !v)}
@@ -367,6 +382,8 @@ export function WinampPlayer({
             type="button"
             className={`deck-winbtn${listOpen ? " on" : ""}`}
             aria-pressed={listOpen}
+            aria-expanded={listOpen}
+            aria-controls={playlistId}
             aria-label="Toggle playlist"
             onClick={() => setListOpen((v) => !v)}
           >
@@ -377,6 +394,7 @@ export function WinampPlayer({
               type="button"
               className={`deck-winbtn${doubled ? " on" : ""}`}
               aria-pressed={doubled}
+              aria-expanded={doubled}
               aria-label="Double size"
               title="Double size"
               onClick={() =>
@@ -402,6 +420,8 @@ export function WinampPlayer({
             type="button"
             className="deck-winbtn"
             aria-label={shaded ? "Expand player" : "Collapse player"}
+            aria-pressed={shaded}
+            aria-expanded={!shaded}
             onClick={() => setShaded((v) => !v)}
           >
             {shaded ? "▣" : "_"}
@@ -423,6 +443,7 @@ export function WinampPlayer({
               className="deck-time"
               onClick={() => setShowRemaining((v) => !v)}
               aria-label={showRemaining ? "Show elapsed time" : "Show remaining time"}
+              aria-pressed={showRemaining}
               title={showRemaining ? "Remaining" : "Elapsed"}
             >
               {showRemaining && duration
@@ -430,13 +451,13 @@ export function WinampPlayer({
                 : fmt(time)}
             </button>
             <Spectrum colors={spectrum} />
-            <div className="deck-marquee" aria-live="polite">
+            <div className="deck-marquee" role="status" aria-live="polite" aria-atomic="true">
               <span className={`deck-marquee-text${marqueeRuns ? " run" : ""}`}>
                 {displayMarquee}
                 <span aria-hidden="true" className="deck-marquee-gap">
                   {"      ◈      "}
                 </span>
-                {marqueeRuns ? displayMarquee : ""}
+                {marqueeRuns ? <span aria-hidden="true">{displayMarquee}</span> : ""}
               </span>
             </div>
           </div>
@@ -461,6 +482,7 @@ export function WinampPlayer({
               }
               onClick={toggle}
               aria-label={playing ? "Pause" : "Play"}
+              aria-pressed={playing}
             >
               {playing ? "⏸" : "▶"}
             </button>
@@ -481,6 +503,7 @@ export function WinampPlayer({
               value={Math.min(time, duration || 0)}
               onChange={(e) => seek(Number(e.target.value))}
               aria-label="Seek"
+              aria-valuetext={`${fmt(time)} of ${fmt(duration)}`}
             />
             <input
               className="deck-vol"
@@ -491,13 +514,14 @@ export function WinampPlayer({
               value={volume}
               onChange={(e) => setVolume(Number(e.target.value))}
               aria-label="Volume"
+              aria-valuetext={`${Math.round(volume * 100)}%`}
               title="Volume"
             />
           </div>
 
           {/* equalizer drawer */}
           {eqOpen && (
-            <div className="deck-eq-panel">
+            <div id={eqPanelId} className="deck-eq-panel" role="region" aria-label="Equalizer">
               <div className="deck-eq-presets">
                 {Object.keys(EQ_PRESETS).map((name) => (
                   <button
@@ -536,7 +560,8 @@ export function WinampPlayer({
                           setEqPreset(null);
                           persist({ eq: next, eqPreset: null });
                         }}
-                        aria-label={`${eqBandLabel(hz)} Hz, ${eqGains[i] ?? 0} decibels`}
+                        aria-label={`${eqBandLabel(hz)} Hz equalizer`}
+                        aria-valuetext={`${eqGains[i] ?? 0} decibels`}
                       />
                     </span>
                     <span className="deck-eq-hz" aria-hidden="true">
@@ -550,7 +575,7 @@ export function WinampPlayer({
 
           {/* playlist drawer */}
           {listOpen && (
-            <div className="deck-list">
+            <div id={playlistId} className="deck-list" role="region" aria-label="Playlist">
               <p className="deck-list-head">
                 {playableCount}/{allTracks.length} recorded
               </p>
@@ -566,6 +591,7 @@ export function WinampPlayer({
                         onClick={() => can && playTrack(t.id)}
                         disabled={!can}
                         aria-current={isCur || undefined}
+                        aria-label={`${String(t.number).padStart(2, "0")}. ${t.title} by ${t.person}${isCur ? ", current track" : ""}${!can ? ", unavailable" : ""}`}
                       >
                         {t.coverImage ? (
                           <img className="deck-row-cover" src={t.coverImage} alt="" />

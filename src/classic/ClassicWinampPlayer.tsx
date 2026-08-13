@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import type { CSSProperties, KeyboardEvent } from "react";
 import { usePlayer } from "../PlayerProvider";
 import { useSkin } from "./useSkin";
 import { SkinProvider } from "./SkinContext";
@@ -38,6 +38,9 @@ const fmtTime = (s: number) => {
   const t = Math.max(0, Math.floor(s));
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
 };
+
+const balanceText = (v: number) =>
+  v === 0 ? "center" : `${Math.round(Math.abs(v) * 100)}% ${v < 0 ? "left" : "right"}`;
 
 /**
  * Classic Winamp main window rendered from a `.wsz` skin and driven by the
@@ -110,6 +113,9 @@ export function ClassicWinampPlayer({
       down="MAIN_SHADE_BUTTON_DEPRESSED"
       onClick={() => setShade(!shade)}
       title={shade ? "Restore" : "Windowshade"}
+      ariaLabel="Toggle windowshade"
+      ariaPressed={shade}
+      ariaExpanded={!shade}
       style={placed(254, 3)}
     />
   );
@@ -117,6 +123,15 @@ export function ClassicWinampPlayer({
   const dblToggle = (
     <div
       onDoubleClick={() => setDoubleSize(!doubleSize)}
+      onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        setDoubleSize(!doubleSize);
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label="Toggle double size"
+      aria-pressed={doubleSize}
       title="Double-click to toggle double size"
       style={{ position: "absolute", left: 30, top: 0, width: 210, height: 14, cursor: "pointer" }}
     />
@@ -127,6 +142,9 @@ export function ClassicWinampPlayer({
       <div
         data-skin-status={status}
         data-shade={shade ? "true" : "false"}
+        role="region"
+        aria-label={`Classic Winamp player, ${status} skin`}
+        aria-busy={status === "loading"}
         style={{ width: MAIN_WIDTH * s, height: height * s }}
       >
         <div
@@ -174,6 +192,12 @@ export function ClassicWinampPlayer({
                 thumbActive="MAIN_POSITION_SLIDER_THUMB_SELECTED"
                 value={position}
                 onChange={(v) => duration > 0 && seek(v * duration)}
+                ariaLabel="Seek"
+                ariaValueMin={0}
+                ariaValueMax={duration}
+                ariaValueNow={time}
+                ariaValueText={`${fmtTime(time)} of ${fmtTime(duration)}`}
+                keyboardStep={duration > 0 ? 1 / duration : 0.05}
                 trackWidth={248}
                 trackHeight={10}
                 style={placed(16, 72)}
@@ -184,6 +208,12 @@ export function ClassicWinampPlayer({
                 thumbActive="MAIN_VOLUME_THUMB_SELECTED"
                 value={volume}
                 onChange={setVolume}
+                ariaLabel="Volume"
+                ariaValueMin={0}
+                ariaValueMax={100}
+                ariaValueNow={Math.round(volume * 100)}
+                ariaValueText={`${Math.round(volume * 100)}%`}
+                keyboardStep={0.01}
                 trackWidth={68}
                 trackHeight={13}
                 frames={28}
@@ -195,6 +225,12 @@ export function ClassicWinampPlayer({
                 thumbActive="MAIN_BALANCE_THUMB_ACTIVE"
                 value={(balance + 1) / 2}
                 onChange={(v) => setBalance(v * 2 - 1)}
+                ariaLabel="Balance"
+                ariaValueMin={-1}
+                ariaValueMax={1}
+                ariaValueNow={balance}
+                ariaValueText={balanceText(balance)}
+                keyboardStep={0.025}
                 trackWidth={38}
                 trackHeight={13}
                 style={placed(177, 57)}
@@ -205,6 +241,8 @@ export function ClassicWinampPlayer({
                 down={shuffle ? "MAIN_SHUFFLE_BUTTON" : "MAIN_SHUFFLE_BUTTON_SELECTED"}
                 onClick={() => setShuffle(!shuffle)}
                 title={shuffle ? "Shuffle on" : "Shuffle off"}
+                ariaLabel="Toggle shuffle"
+                ariaPressed={shuffle}
                 style={placed(164, 89)}
               />
               <SpriteButton
@@ -212,6 +250,8 @@ export function ClassicWinampPlayer({
                 down={repeat ? "MAIN_REPEAT_BUTTON" : "MAIN_REPEAT_BUTTON_SELECTED"}
                 onClick={() => setRepeat(!repeat)}
                 title={repeat ? "Repeat on" : "Repeat off"}
+                ariaLabel="Toggle repeat"
+                ariaPressed={repeat}
                 style={placed(210, 89)}
               />
 

@@ -33,12 +33,20 @@ export function SpriteButton({
   down,
   onClick,
   title,
+  ariaLabel,
+  ariaPressed,
+  ariaExpanded,
+  ariaControls,
   style,
 }: {
   up: SpriteName;
   down: SpriteName;
   onClick?: () => void;
   title?: string;
+  ariaLabel?: string;
+  ariaPressed?: boolean;
+  ariaExpanded?: boolean;
+  ariaControls?: string;
   style?: CSSProperties;
 }) {
   const skin = useSkinContext();
@@ -47,7 +55,10 @@ export function SpriteButton({
     <button
       type="button"
       title={title}
-      aria-label={title}
+      aria-label={ariaLabel ?? title}
+      aria-pressed={ariaPressed}
+      aria-expanded={ariaExpanded}
+      aria-controls={ariaControls}
       onClick={onClick}
       onPointerDown={() => setPressed(true)}
       onPointerUp={() => setPressed(false)}
