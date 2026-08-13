@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useRef, useState, useMemo, useCallback, useEffect, useId } from 'react';
 import { jsxs, jsx, Fragment } from 'react/jsx-runtime';
-import { useDragControls, useMotionValue, motion } from 'framer-motion';
+import { motion, useDragControls, useMotionValue } from 'framer-motion';
 
 // src/PlayerProvider.tsx
 var EQ_BANDS = [60, 170, 310, 600, 1e3, 3e3, 6e3, 12e3, 14e3, 16e3];
@@ -341,17 +341,6 @@ function PlayerProvider({
     children,
     /* @__PURE__ */ jsx("audio", { ref: audioRef, preload: "none", crossOrigin: "anonymous", hidden: true })
   ] });
-}
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReduced(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-  return reduced;
 }
 function Visualizer({ onClose }) {
   const { analyser } = usePlayer();
@@ -757,13 +746,118 @@ var EQ_PRESETS = {
 function eqBandLabel(hz) {
   return hz >= 1e3 ? `${hz / 1e3}k` : `${hz}`;
 }
-function fmt(s) {
-  if (!Number.isFinite(s) || s < 0) return "0:00";
-  const m = Math.floor(s / 60);
-  const sec = Math.floor(s % 60);
-  return `${m}:${String(sec).padStart(2, "0")}`;
+function EqualizerPanel({
+  id,
+  eqGains,
+  eqPreset,
+  persist,
+  setEqGain,
+  setEqGains,
+  setEqPreset
+}) {
+  return /* @__PURE__ */ jsxs("div", { id, className: "deck-eq-panel", role: "region", "aria-label": "Equalizer", children: [
+    /* @__PURE__ */ jsx("div", { className: "deck-eq-presets", children: Object.keys(EQ_PRESETS).map((name) => /* @__PURE__ */ jsx(
+      "button",
+      {
+        type: "button",
+        className: `deck-eq-preset${eqPreset === name ? " is-active" : ""}`,
+        "aria-pressed": eqPreset === name,
+        onClick: () => {
+          const gains = EQ_PRESETS[name];
+          setEqGains(gains);
+          setEqPreset(name);
+          persist({ eq: gains, eqPreset: name });
+        },
+        children: name
+      },
+      name
+    )) }),
+    /* @__PURE__ */ jsx("div", { className: "deck-eq-bands", children: EQ_BANDS.map((hz, i) => /* @__PURE__ */ jsxs("div", { className: "deck-eq-band", children: [
+      /* @__PURE__ */ jsx("span", { className: "deck-eq-slot", children: /* @__PURE__ */ jsx(
+        "input",
+        {
+          className: "deck-eq-slider",
+          type: "range",
+          min: -12,
+          max: 12,
+          step: 1,
+          value: eqGains[i] ?? 0,
+          onChange: (e) => {
+            const db = Number(e.target.value);
+            setEqGain(i, db);
+            const next = eqGains.slice();
+            next[i] = db;
+            setEqPreset(null);
+            persist({ eq: next, eqPreset: null });
+          },
+          "aria-label": `${eqBandLabel(hz)} Hz equalizer`,
+          "aria-valuetext": `${eqGains[i] ?? 0} decibels`
+        }
+      ) }),
+      /* @__PURE__ */ jsx("span", { className: "deck-eq-hz", "aria-hidden": "true", children: eqBandLabel(hz) })
+    ] }, hz)) })
+  ] });
 }
-var DEFAULT_SPECTRUM_COLORS = ["#f47a52", "#fcd117", "#6dcad0", "#9b7bff", "#eaa8cb"];
+function PlaylistPanel({
+  id,
+  allTracks,
+  currentId,
+  playing,
+  playTrack
+}) {
+  const playableCount = allTracks.filter((track) => track.audioUrl).length;
+  return /* @__PURE__ */ jsxs("div", { id, className: "deck-list", role: "region", "aria-label": "Playlist", children: [
+    /* @__PURE__ */ jsxs("p", { className: "deck-list-head", children: [
+      playableCount,
+      "/",
+      allTracks.length,
+      " recorded"
+    ] }),
+    /* @__PURE__ */ jsx("ol", { className: "deck-list-rows", children: allTracks.map((track) => {
+      const isCurrent = track.id === currentId;
+      const canPlay = Boolean(track.audioUrl);
+      return /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsxs(
+        "button",
+        {
+          type: "button",
+          className: `deck-row${isCurrent ? " cur" : ""}${canPlay ? "" : " off"}`,
+          onClick: () => canPlay && playTrack(track.id),
+          disabled: !canPlay,
+          "aria-current": isCurrent || void 0,
+          "aria-label": `${String(track.number).padStart(2, "0")}. ${track.title} by ${track.person}${isCurrent ? ", current track" : ""}${!canPlay ? ", unavailable" : ""}`,
+          children: [
+            track.coverImage ? /* @__PURE__ */ jsx("img", { className: "deck-row-cover", src: track.coverImage, alt: "" }) : /* @__PURE__ */ jsx(
+              "span",
+              {
+                className: "deck-row-cover deck-row-cover-empty",
+                "aria-hidden": "true"
+              }
+            ),
+            /* @__PURE__ */ jsx("span", { className: "deck-row-num", children: String(track.number).padStart(2, "0") }),
+            /* @__PURE__ */ jsx("span", { className: "deck-row-title", children: track.title }),
+            /* @__PURE__ */ jsx("span", { className: "deck-row-person", children: track.person }),
+            /* @__PURE__ */ jsx("span", { className: "deck-row-tag", children: isCurrent && playing ? /* @__PURE__ */ jsxs("span", { className: "deck-eq", "aria-hidden": "true", children: [
+              /* @__PURE__ */ jsx("i", {}),
+              /* @__PURE__ */ jsx("i", {}),
+              /* @__PURE__ */ jsx("i", {})
+            ] }) : canPlay ? "\u25B8" : "\xB7" })
+          ]
+        }
+      ) }, track.id);
+    }) })
+  ] });
+}
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
 function Spectrum({ colors }) {
   const { analyser, playing } = usePlayer();
   const reduced = usePrefersReducedMotion();
@@ -773,7 +867,6 @@ function Spectrum({ colors }) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const COLORS = colors;
     const BINS = 14;
     let raf = 0;
     let phase = 0;
@@ -794,7 +887,7 @@ function Spectrum({ colors }) {
           v = reduced ? 0.2 + i % 3 * 0.06 : 0.14 + Math.abs(Math.sin(phase + i * 0.5)) * 0.3;
         }
         const barH = Math.max(1, v * h);
-        ctx.fillStyle = COLORS[i % COLORS.length];
+        ctx.fillStyle = colors[i % colors.length];
         ctx.globalAlpha = 0.5 + v * 0.5;
         ctx.fillRect(i * (bw + gap), h - barH, bw, barH);
       }
@@ -816,50 +909,113 @@ function Spectrum({ colors }) {
     }
   );
 }
-function WinampPlayer({
-  storageKey = "deckState",
-  wordmarkSrc,
-  wordmarkText = "ETH\u1ECD\u0301S\xB7FM",
+function formatDeckTime(s) {
+  if (!Number.isFinite(s) || s < 0) return "0:00";
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${String(sec).padStart(2, "0")}`;
+}
+function DeckDisplay({
+  current,
+  duration,
+  marqueeRuns,
+  onToggleTime,
+  showRemaining,
   spectrumColors,
-  theme
-} = {}) {
-  const themePack = theme ? THEMES[theme] : void 0;
-  const spectrum = spectrumColors ?? themePack?.spectrum ?? DEFAULT_SPECTRUM_COLORS;
-  const markSrc = wordmarkSrc ?? themePack?.markSrc;
-  const {
-    allTracks,
-    currentId,
-    playing,
-    time,
-    duration,
-    volume,
-    bpm,
-    eqGains,
-    setEqGain,
-    setEqGains,
-    cue,
-    playTrack,
-    toggle,
-    next,
-    prev,
-    seek,
-    setVolume
-  } = usePlayer();
+  time,
+  displayMarquee
+}) {
+  return /* @__PURE__ */ jsxs("div", { className: "deck-lcd", children: [
+    current?.coverImage ? /* @__PURE__ */ jsx("img", { className: "deck-cover", src: current.coverImage, alt: "" }) : /* @__PURE__ */ jsx("span", { className: "deck-cover deck-cover-empty", "aria-hidden": "true" }),
+    /* @__PURE__ */ jsx(
+      "button",
+      {
+        type: "button",
+        className: "deck-time",
+        onClick: onToggleTime,
+        "aria-label": showRemaining ? "Show elapsed time" : "Show remaining time",
+        "aria-pressed": showRemaining,
+        title: showRemaining ? "Remaining" : "Elapsed",
+        children: showRemaining && duration ? `-${formatDeckTime(Math.max(0, duration - time))}` : formatDeckTime(time)
+      }
+    ),
+    /* @__PURE__ */ jsx(Spectrum, { colors: spectrumColors }),
+    /* @__PURE__ */ jsx("div", { className: "deck-marquee", role: "status", "aria-live": "polite", "aria-atomic": "true", children: /* @__PURE__ */ jsxs("span", { className: `deck-marquee-text${marqueeRuns ? " run" : ""}`, children: [
+      displayMarquee,
+      /* @__PURE__ */ jsx("span", { "aria-hidden": "true", className: "deck-marquee-gap", children: "      \u25C8      " }),
+      marqueeRuns ? /* @__PURE__ */ jsx("span", { "aria-hidden": "true", children: displayMarquee }) : ""
+    ] }) })
+  ] });
+}
+function TransportControls({
+  bpm,
+  duration,
+  onNext,
+  onPrevious,
+  onSeek,
+  onToggle,
+  onVolume,
+  playing,
+  reduced,
+  time,
+  volume
+}) {
+  return /* @__PURE__ */ jsxs("div", { className: "deck-ctrl", children: [
+    /* @__PURE__ */ jsx("button", { type: "button", className: "deck-key", onClick: onPrevious, "aria-label": "Previous track", children: "\u23EE" }),
+    /* @__PURE__ */ jsx(
+      "button",
+      {
+        type: "button",
+        className: `deck-key deck-key-play${playing && !reduced ? " is-pulsing" : ""}`,
+        style: playing && bpm ? { "--beat": `${(60 / bpm).toFixed(3)}s` } : void 0,
+        onClick: onToggle,
+        "aria-label": playing ? "Pause" : "Play",
+        "aria-pressed": playing,
+        children: playing ? "\u23F8" : "\u25B6"
+      }
+    ),
+    /* @__PURE__ */ jsx("button", { type: "button", className: "deck-key", onClick: onNext, "aria-label": "Next track", children: "\u23ED" }),
+    /* @__PURE__ */ jsx(
+      "input",
+      {
+        className: "deck-seek",
+        type: "range",
+        min: 0,
+        max: duration || 0,
+        step: 0.1,
+        value: Math.min(time, duration || 0),
+        onChange: (e) => onSeek(Number(e.target.value)),
+        "aria-label": "Seek",
+        "aria-valuetext": `${formatDeckTime(time)} of ${formatDeckTime(duration)}`
+      }
+    ),
+    /* @__PURE__ */ jsx(
+      "input",
+      {
+        className: "deck-vol",
+        type: "range",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        value: volume,
+        onChange: (e) => onVolume(Number(e.target.value)),
+        "aria-label": "Volume",
+        "aria-valuetext": `${Math.round(volume * 100)}%`,
+        title: "Volume"
+      }
+    )
+  ] });
+}
+function useDeckWindowState({
+  storageKey,
+  setEqGains
+}) {
   const reduced = usePrefersReducedMotion();
-  const [listOpen, setListOpen] = useState(false);
-  const [eqOpen, setEqOpen] = useState(false);
-  const [showRemaining, setShowRemaining] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [shaded, setShaded] = useState(false);
   const [doubled, setDoubled] = useState(false);
   const [eqPreset, setEqPreset] = useState(null);
-  const [vizOpen, setVizOpen] = useState(false);
   const [canViz, setCanViz] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [easter, setEaster] = useState(false);
-  const deckId = useId();
-  const eqPanelId = `${deckId}-eq`;
-  const playlistId = `${deckId}-playlist`;
   const dragControls = useDragControls();
   const boundsRef = useRef(null);
   const deckRef = useRef(null);
@@ -922,6 +1078,102 @@ function WinampPlayer({
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, [x, y, reduced, storageKey, setEqGains]);
+  const startDrag = useCallback(
+    (e) => {
+      if (isMobile) return;
+      if (e.target.closest("button")) return;
+      dragControls.start(e);
+    },
+    [dragControls, isMobile]
+  );
+  const onBarDoubleClick = useCallback((e) => {
+    if (e.target.closest("button")) return;
+    setShaded((v) => !v);
+  }, []);
+  const toggleDoubleSize = useCallback(() => {
+    setDoubled((v) => {
+      persist({ doubled: !v });
+      return !v;
+    });
+  }, [persist]);
+  return {
+    canViz,
+    deckRef,
+    doubled,
+    dragControls,
+    isMobile,
+    onBarDoubleClick,
+    persist,
+    shaded,
+    setShaded,
+    startDrag,
+    toggleDoubleSize,
+    boundsRef,
+    x,
+    y,
+    reduced,
+    eqPreset,
+    setEqPreset
+  };
+}
+var DEFAULT_SPECTRUM_COLORS = ["#f47a52", "#fcd117", "#6dcad0", "#9b7bff", "#eaa8cb"];
+function WinampPlayer({
+  storageKey = "deckState",
+  wordmarkSrc,
+  wordmarkText = "ETH\u1ECD\u0301S\xB7FM",
+  spectrumColors,
+  theme
+} = {}) {
+  const themePack = theme ? THEMES[theme] : void 0;
+  const spectrum = spectrumColors ?? themePack?.spectrum ?? DEFAULT_SPECTRUM_COLORS;
+  const markSrc = wordmarkSrc ?? themePack?.markSrc;
+  const {
+    allTracks,
+    currentId,
+    playing,
+    time,
+    duration,
+    volume,
+    bpm,
+    eqGains,
+    setEqGain,
+    setEqGains,
+    cue,
+    playTrack,
+    toggle,
+    next,
+    prev,
+    seek,
+    setVolume
+  } = usePlayer();
+  const [listOpen, setListOpen] = useState(false);
+  const [eqOpen, setEqOpen] = useState(false);
+  const [showRemaining, setShowRemaining] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [vizOpen, setVizOpen] = useState(false);
+  const [easter, setEaster] = useState(false);
+  const deckId = useId();
+  const eqPanelId = `${deckId}-eq`;
+  const playlistId = `${deckId}-playlist`;
+  const {
+    canViz,
+    deckRef,
+    doubled,
+    dragControls,
+    isMobile,
+    onBarDoubleClick,
+    persist,
+    reduced,
+    shaded,
+    setShaded,
+    startDrag,
+    toggleDoubleSize,
+    boundsRef,
+    x,
+    y,
+    eqPreset,
+    setEqPreset
+  } = useDeckWindowState({ storageKey, setEqGains });
   usePlayerKeyboardShortcuts();
   useEffect(() => {
     const KONAMI = [
@@ -977,21 +1229,11 @@ function WinampPlayer({
       setTimeout(() => setCopied(false), 1600);
     });
   }, [currentId]);
-  const startDrag = (e) => {
-    if (isMobile) return;
-    if (e.target.closest("button")) return;
-    dragControls.start(e);
-  };
-  const onBarDoubleClick = (e) => {
-    if (e.target.closest("button")) return;
-    setShaded((v) => !v);
-  };
-  const current = currentId ? allTracks.find((t) => t.id === currentId) ?? null : null;
+  const current = currentId ? allTracks.find((track) => track.id === currentId) ?? null : null;
   const numLabel = current ? String(current.number).padStart(2, "0") : "--";
   const marquee = current ? `${numLabel}\xB7${current.title.toUpperCase()}  \xB7  ${current.person.toUpperCase()}${bpm ? `  \xB7  ${bpm} BPM` : ""}` : "ETH\u1ECD\u0301S BLOCK PARTY  \xB7  SELECT A TRACK";
   const displayMarquee = easter ? "\u266A  IT REALLY WHIPS THE LLAMA'S ASS  \u266A  \u{1F999}" : marquee;
   const marqueeRuns = (playing || easter) && !reduced;
-  const playableCount = allTracks.filter((t) => t.audioUrl).length;
   return /* @__PURE__ */ jsxs(Fragment, { children: [
     /* @__PURE__ */ jsx("div", { ref: boundsRef, className: "deck-bounds", "aria-hidden": "true" }),
     /* @__PURE__ */ jsxs(
@@ -1014,7 +1256,6 @@ function WinampPlayer({
           scale: doubled && !isMobile ? 2 : 1,
           transformOrigin: "100% 0%",
           ...themePack?.vars,
-          // Per-track palette tints over the theme; theme accent is the fallback.
           "--deck-accent": current?.art.palette[0] ?? themePack?.vars["--deck-accent"] ?? "#f47a52"
         },
         children: [
@@ -1086,10 +1327,7 @@ function WinampPlayer({
                       "aria-expanded": doubled,
                       "aria-label": "Double size",
                       title: "Double size",
-                      onClick: () => setDoubled((v) => {
-                        persist({ doubled: !v });
-                        return !v;
-                      }),
+                      onClick: toggleDoubleSize,
                       children: "\u2922"
                     }
                   ),
@@ -1121,172 +1359,57 @@ function WinampPlayer({
             }
           ),
           !shaded && /* @__PURE__ */ jsxs("div", { className: "deck-body", children: [
-            /* @__PURE__ */ jsxs("div", { className: "deck-lcd", children: [
-              current?.coverImage ? /* @__PURE__ */ jsx("img", { className: "deck-cover", src: current.coverImage, alt: "" }) : /* @__PURE__ */ jsx("span", { className: "deck-cover deck-cover-empty", "aria-hidden": "true" }),
-              /* @__PURE__ */ jsx(
-                "button",
-                {
-                  type: "button",
-                  className: "deck-time",
-                  onClick: () => setShowRemaining((v) => !v),
-                  "aria-label": showRemaining ? "Show elapsed time" : "Show remaining time",
-                  "aria-pressed": showRemaining,
-                  title: showRemaining ? "Remaining" : "Elapsed",
-                  children: showRemaining && duration ? `-${fmt(Math.max(0, duration - time))}` : fmt(time)
-                }
-              ),
-              /* @__PURE__ */ jsx(Spectrum, { colors: spectrum }),
-              /* @__PURE__ */ jsx("div", { className: "deck-marquee", role: "status", "aria-live": "polite", "aria-atomic": "true", children: /* @__PURE__ */ jsxs("span", { className: `deck-marquee-text${marqueeRuns ? " run" : ""}`, children: [
+            /* @__PURE__ */ jsx(
+              DeckDisplay,
+              {
+                current,
+                duration,
                 displayMarquee,
-                /* @__PURE__ */ jsx("span", { "aria-hidden": "true", className: "deck-marquee-gap", children: "      \u25C8      " }),
-                marqueeRuns ? /* @__PURE__ */ jsx("span", { "aria-hidden": "true", children: displayMarquee }) : ""
-              ] }) })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "deck-ctrl", children: [
-              /* @__PURE__ */ jsx(
-                "button",
-                {
-                  type: "button",
-                  className: "deck-key",
-                  onClick: prev,
-                  "aria-label": "Previous track",
-                  children: "\u23EE"
-                }
-              ),
-              /* @__PURE__ */ jsx(
-                "button",
-                {
-                  type: "button",
-                  className: `deck-key deck-key-play${playing && !reduced ? " is-pulsing" : ""}`,
-                  style: playing && bpm ? { "--beat": `${(60 / bpm).toFixed(3)}s` } : void 0,
-                  onClick: toggle,
-                  "aria-label": playing ? "Pause" : "Play",
-                  "aria-pressed": playing,
-                  children: playing ? "\u23F8" : "\u25B6"
-                }
-              ),
-              /* @__PURE__ */ jsx(
-                "button",
-                {
-                  type: "button",
-                  className: "deck-key",
-                  onClick: next,
-                  "aria-label": "Next track",
-                  children: "\u23ED"
-                }
-              ),
-              /* @__PURE__ */ jsx(
-                "input",
-                {
-                  className: "deck-seek",
-                  type: "range",
-                  min: 0,
-                  max: duration || 0,
-                  step: 0.1,
-                  value: Math.min(time, duration || 0),
-                  onChange: (e) => seek(Number(e.target.value)),
-                  "aria-label": "Seek",
-                  "aria-valuetext": `${fmt(time)} of ${fmt(duration)}`
-                }
-              ),
-              /* @__PURE__ */ jsx(
-                "input",
-                {
-                  className: "deck-vol",
-                  type: "range",
-                  min: 0,
-                  max: 1,
-                  step: 0.01,
-                  value: volume,
-                  onChange: (e) => setVolume(Number(e.target.value)),
-                  "aria-label": "Volume",
-                  "aria-valuetext": `${Math.round(volume * 100)}%`,
-                  title: "Volume"
-                }
-              )
-            ] }),
-            eqOpen && /* @__PURE__ */ jsxs("div", { id: eqPanelId, className: "deck-eq-panel", role: "region", "aria-label": "Equalizer", children: [
-              /* @__PURE__ */ jsx("div", { className: "deck-eq-presets", children: Object.keys(EQ_PRESETS).map((name) => /* @__PURE__ */ jsx(
-                "button",
-                {
-                  type: "button",
-                  className: `deck-eq-preset${eqPreset === name ? " is-active" : ""}`,
-                  "aria-pressed": eqPreset === name,
-                  onClick: () => {
-                    const gains = EQ_PRESETS[name];
-                    setEqGains(gains);
-                    setEqPreset(name);
-                    persist({ eq: gains, eqPreset: name });
-                  },
-                  children: name
-                },
-                name
-              )) }),
-              /* @__PURE__ */ jsx("div", { className: "deck-eq-bands", children: EQ_BANDS.map((hz, i) => /* @__PURE__ */ jsxs("div", { className: "deck-eq-band", children: [
-                /* @__PURE__ */ jsx("span", { className: "deck-eq-slot", children: /* @__PURE__ */ jsx(
-                  "input",
-                  {
-                    className: "deck-eq-slider",
-                    type: "range",
-                    min: -12,
-                    max: 12,
-                    step: 1,
-                    value: eqGains[i] ?? 0,
-                    onChange: (e) => {
-                      const db = Number(e.target.value);
-                      setEqGain(i, db);
-                      const next2 = eqGains.slice();
-                      next2[i] = db;
-                      setEqPreset(null);
-                      persist({ eq: next2, eqPreset: null });
-                    },
-                    "aria-label": `${eqBandLabel(hz)} Hz equalizer`,
-                    "aria-valuetext": `${eqGains[i] ?? 0} decibels`
-                  }
-                ) }),
-                /* @__PURE__ */ jsx("span", { className: "deck-eq-hz", "aria-hidden": "true", children: eqBandLabel(hz) })
-              ] }, hz)) })
-            ] }),
-            listOpen && /* @__PURE__ */ jsxs("div", { id: playlistId, className: "deck-list", role: "region", "aria-label": "Playlist", children: [
-              /* @__PURE__ */ jsxs("p", { className: "deck-list-head", children: [
-                playableCount,
-                "/",
-                allTracks.length,
-                " recorded"
-              ] }),
-              /* @__PURE__ */ jsx("ol", { className: "deck-list-rows", children: allTracks.map((t) => {
-                const isCur = t.id === currentId;
-                const can = Boolean(t.audioUrl);
-                return /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsxs(
-                  "button",
-                  {
-                    type: "button",
-                    className: `deck-row${isCur ? " cur" : ""}${can ? "" : " off"}`,
-                    onClick: () => can && playTrack(t.id),
-                    disabled: !can,
-                    "aria-current": isCur || void 0,
-                    "aria-label": `${String(t.number).padStart(2, "0")}. ${t.title} by ${t.person}${isCur ? ", current track" : ""}${!can ? ", unavailable" : ""}`,
-                    children: [
-                      t.coverImage ? /* @__PURE__ */ jsx("img", { className: "deck-row-cover", src: t.coverImage, alt: "" }) : /* @__PURE__ */ jsx(
-                        "span",
-                        {
-                          className: "deck-row-cover deck-row-cover-empty",
-                          "aria-hidden": "true"
-                        }
-                      ),
-                      /* @__PURE__ */ jsx("span", { className: "deck-row-num", children: String(t.number).padStart(2, "0") }),
-                      /* @__PURE__ */ jsx("span", { className: "deck-row-title", children: t.title }),
-                      /* @__PURE__ */ jsx("span", { className: "deck-row-person", children: t.person }),
-                      /* @__PURE__ */ jsx("span", { className: "deck-row-tag", children: isCur && playing ? /* @__PURE__ */ jsxs("span", { className: "deck-eq", "aria-hidden": "true", children: [
-                        /* @__PURE__ */ jsx("i", {}),
-                        /* @__PURE__ */ jsx("i", {}),
-                        /* @__PURE__ */ jsx("i", {})
-                      ] }) : can ? "\u25B8" : "\xB7" })
-                    ]
-                  }
-                ) }, t.id);
-              }) })
-            ] }),
+                marqueeRuns,
+                onToggleTime: () => setShowRemaining((v) => !v),
+                showRemaining,
+                spectrumColors: spectrum,
+                time
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              TransportControls,
+              {
+                bpm,
+                duration,
+                onNext: next,
+                onPrevious: prev,
+                onSeek: seek,
+                onToggle: toggle,
+                onVolume: setVolume,
+                playing,
+                reduced,
+                time,
+                volume
+              }
+            ),
+            eqOpen && /* @__PURE__ */ jsx(
+              EqualizerPanel,
+              {
+                id: eqPanelId,
+                eqGains,
+                eqPreset,
+                persist,
+                setEqGain,
+                setEqGains,
+                setEqPreset
+              }
+            ),
+            listOpen && /* @__PURE__ */ jsx(
+              PlaylistPanel,
+              {
+                id: playlistId,
+                allTracks,
+                currentId,
+                playing,
+                playTrack
+              }
+            ),
             vizOpen && canViz && /* @__PURE__ */ jsx(Visualizer, { onClose: () => setVizOpen(false) })
           ] })
         ]
