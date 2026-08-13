@@ -142,6 +142,18 @@
 .deck-marquee-gap { color: var(--wamp-dim, #8c819b); }
 @keyframes deck-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
+.deck-playback-status {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;
+  margin: 0 0.3rem 0.28rem; padding: 0.18rem 0.35rem;
+  color: var(--wamp-yellow, #fcd117); background: rgba(0,0,0,0.32);
+  border: 1px solid rgba(252,209,23,0.24); font-size: 0.52rem;
+}
+.deck-playback-status.is-error { color: #ff9d9d; border-color: rgba(255,120,120,0.4); }
+.deck-retry {
+  padding: 0.08rem 0.28rem; color: inherit; background: transparent;
+  border: 1px solid currentColor; border-radius: 2px; font: inherit; cursor: pointer;
+}
+
 /* control row: transport · seek · volume — all one line */
 .deck-ctrl { display: flex; align-items: center; gap: 0.22rem; padding: 0 0.3rem 0.32rem; }
 .deck-key {

@@ -1,4 +1,4 @@
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   EQ_BANDS,
@@ -137,5 +137,67 @@ describe("track stepping", () => {
     const h = mount();
     act(() => h.api.prev());
     expect(h.api.currentId).toBe("b");
+  });
+});
+
+describe("playback status", () => {
+  it("tracks cue, readiness, play, pause, and buffering", () => {
+    const h = mount();
+    const audio = document.querySelector("audio")!;
+
+    expect(h.api.playbackStatus).toBe("idle");
+    act(() => h.api.cue("a"));
+    expect(h.api.playbackStatus).toBe("loading");
+    act(() => fireEvent(audio, new Event("canplay")));
+    expect(h.api.playbackStatus).toBe("ready");
+    act(() => fireEvent.play(audio));
+    expect(h.api.playbackStatus).toBe("playing");
+    act(() => fireEvent.waiting(audio));
+    expect(h.api.playbackStatus).toBe("loading");
+    act(() => fireEvent.pause(audio));
+    expect(h.api.playbackStatus).toBe("paused");
+  });
+
+  it("surfaces native load errors and retries the selected cue", () => {
+    const h = mount();
+    const audio = document.querySelector("audio")!;
+
+    act(() => h.api.cue("a"));
+    act(() => fireEvent.error(audio));
+    expect(h.api.playbackStatus).toBe("error");
+    expect(h.api.playbackError).toEqual({ trackId: "a", code: "load" });
+    act(() => h.api.retry());
+    expect(h.api.playbackStatus).toBe("loading");
+    expect(h.api.playbackError).toBeNull();
+    expect(h.api.currentId).toBe("a");
+  });
+
+  it("catches rejected play promises and ignores stale source events", async () => {
+    const h = mount();
+    const audio = document.querySelector("audio")!;
+    audio.play = () => Promise.reject(new Error("blocked"));
+
+    await act(async () => {
+      h.api.playTrack("a");
+      await Promise.resolve();
+    });
+    expect(h.api.playbackError).toEqual({ trackId: "a", code: "play" });
+
+    act(() => h.api.cue("b"));
+    act(() =>
+      audio.dispatchEvent(new CustomEvent("error", { detail: { src: "/a.mp3" } })),
+    );
+    expect(h.api.playbackError).toBeNull();
+    expect(h.api.currentId).toBe("b");
+    expect(h.api.playbackStatus).toBe("loading");
+  });
+
+  it("keeps invalid and unplayable selections as no-ops", () => {
+    const h = mount();
+    act(() => h.api.cue("c"));
+    act(() => h.api.playTrack("missing"));
+    expect(h.api.currentId).toBeNull();
+    expect(h.api.playbackStatus).toBe("idle");
+    expect(h.api.playbackError).toBeNull();
   });
 });

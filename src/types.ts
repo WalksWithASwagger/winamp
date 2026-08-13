@@ -16,3 +16,7 @@ export interface PlayerTrack {
 /** Fired when a track starts, so a host app can react (e.g. drive an ambient
  *  scene) without the player importing anything app-specific. */
 export type NowPlaying = { bpm: number; accent: string };
+
+export type PlaybackStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "error";
+export type PlaybackErrorCode = "load" | "play";
+export type PlaybackError = { trackId: string; code: PlaybackErrorCode };

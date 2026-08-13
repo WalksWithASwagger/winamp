@@ -19,6 +19,12 @@ type NowPlaying = {
     bpm: number;
     accent: string;
 };
+type PlaybackStatus = "idle" | "loading" | "ready" | "playing" | "paused" | "error";
+type PlaybackErrorCode = "load" | "play";
+type PlaybackError = {
+    trackId: string;
+    code: PlaybackErrorCode;
+};
 
 declare const EQ_BANDS: number[];
 declare const EQ_MAX_DB = 12;
@@ -26,6 +32,8 @@ type PlayerValue = {
     allTracks: PlayerTrack[];
     currentId: string | null;
     playing: boolean;
+    playbackStatus: PlaybackStatus;
+    playbackError: PlaybackError | null;
     time: number;
     duration: number;
     volume: number;
@@ -46,6 +54,7 @@ type PlayerValue = {
     setRepeat: (on: boolean) => void;
     cue: (id: string) => void;
     playTrack: (id: string) => void;
+    retry: () => void;
     toggle: () => void;
     next: () => void;
     prev: () => void;
@@ -290,4 +299,4 @@ declare function ClassicVisualizer({ analyser, left, top, }: {
 /** Resolve any character to its glyph sprite name (uppercase-folded). */
 declare const glyphFor: (ch: string) => string | undefined;
 
-export { BitmapText, ClassicEqWindow, ClassicPlaylistWindow, ClassicVisualizer, ClassicWinampPlayer, type DeckTheme, EQ_BANDS, EQ_MAX_DB, type KeyboardShortcutOptions, Marquee, type NowPlaying, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, THEMES, type ThemePack, TimeDisplay, type UseSkinResult, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, skinMuseumUrl, usePlayer, usePlayerKeyboardShortcuts, usePrefersReducedMotion, useSkin, useSkinContext };
+export { BitmapText, ClassicEqWindow, ClassicPlaylistWindow, ClassicVisualizer, ClassicWinampPlayer, type DeckTheme, EQ_BANDS, EQ_MAX_DB, type KeyboardShortcutOptions, Marquee, type NowPlaying, type PlaybackError, type PlaybackErrorCode, type PlaybackStatus, PlayerProvider, type PlayerTrack, SKIN_SPRITES, SPRITE_DIMS, type Skin, type SkinColors, SkinProvider, type SkinStatus, Slider, Sprite, SpriteButton, type SpriteDef, type SpriteName, THEMES, type ThemePack, TimeDisplay, type UseSkinResult, WinampPlayer, glyphFor, parsePledit, parseSkin, parseViscolor, skinMuseumUrl, usePlayer, usePlayerKeyboardShortcuts, usePrefersReducedMotion, useSkin, useSkinContext };

@@ -10,7 +10,12 @@ import {
   useRef,
   useState,
 } from "react";
-import type { NowPlaying, PlayerTrack } from "./types";
+import type {
+  NowPlaying,
+  PlaybackError,
+  PlaybackStatus,
+  PlayerTrack,
+} from "./types";
 
 // Classic 10-band graphic-EQ centre frequencies (Winamp/ISO octave spacing).
 export const EQ_BANDS = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000];
@@ -20,6 +25,8 @@ type PlayerValue = {
   allTracks: PlayerTrack[];
   currentId: string | null;
   playing: boolean;
+  playbackStatus: PlaybackStatus;
+  playbackError: PlaybackError | null;
   time: number;
   duration: number;
   volume: number;
@@ -40,6 +47,7 @@ type PlayerValue = {
   setRepeat: (on: boolean) => void;
   cue: (id: string) => void;
   playTrack: (id: string) => void;
+  retry: () => void;
   toggle: () => void;
   next: () => void;
   prev: () => void;
@@ -76,6 +84,8 @@ export function PlayerProvider({
 
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [playbackStatus, setPlaybackStatusState] = useState<PlaybackStatus>("idle");
+  const [playbackError, setPlaybackError] = useState<PlaybackError | null>(null);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(0.85);
@@ -94,6 +104,17 @@ export function PlayerProvider({
   const balanceRefV = useRef(0);
   const shuffleRef = useRef(false);
   const repeatRef = useRef(false);
+  const currentIdRef = useRef<string | null>(null);
+  const sourceRef = useRef("");
+  const sourceTokenRef = useRef(0);
+  const playbackStatusRef = useRef<PlaybackStatus>("idle");
+  const intentRef = useRef<"cue" | "play">("cue");
+  const suppressPauseRef = useRef(false);
+
+  const setPlaybackStatus = useCallback((status: PlaybackStatus) => {
+    playbackStatusRef.current = status;
+    setPlaybackStatusState(status);
+  }, []);
 
   // Linear gain a peaking filter (or preamp) should apply for a dB value.
   const dbToGain = (db: number) => 10 ** (db / 20);
@@ -230,37 +251,83 @@ export function PlayerProvider({
     [onNowPlaying],
   );
 
+  const attemptPlay = useCallback(() => {
+    const el = audioRef.current;
+    const trackId = currentIdRef.current;
+    const token = sourceTokenRef.current;
+    if (!el || !trackId) return;
+    void ctxRef.current?.resume();
+    try {
+      const result = el.play();
+      void result?.catch(() => {
+        if (token !== sourceTokenRef.current || trackId !== currentIdRef.current) return;
+        setPlaybackStatus("error");
+        setPlaybackError({ trackId, code: "play" });
+        setPlaying(false);
+      });
+    } catch {
+      if (token !== sourceTokenRef.current || trackId !== currentIdRef.current) return;
+      setPlaybackStatus("error");
+      setPlaybackError({ trackId, code: "play" });
+      setPlaying(false);
+    }
+  }, [setPlaybackStatus]);
+
+  const selectTrack = useCallback(
+    (t: PlayerTrack, intent: "cue" | "play", reload: boolean) => {
+      const el = audioRef.current;
+      if (!el || !t.audioUrl) return;
+      sourceTokenRef.current += 1;
+      currentIdRef.current = t.id;
+      intentRef.current = intent;
+      sourceRef.current = t.audioUrl;
+      setCurrentId(t.id);
+      setTime(0);
+      setDuration(0);
+      setPlaying(false);
+      setPlaybackError(null);
+      setPlaybackStatus("loading");
+      suppressPauseRef.current = true;
+      if (reload || el.src !== t.audioUrl) el.src = t.audioUrl;
+      sourceRef.current = el.currentSrc || el.src || t.audioUrl;
+      try {
+        el.load();
+      } catch {
+        // jsdom does not implement media loading; browsers do.
+      }
+      driveScene(t);
+      if (intent === "play") attemptPlay();
+    },
+    [attemptPlay, driveScene, setPlaybackStatus],
+  );
+
   // Prime a track (load + select) WITHOUT playing — browsers block autoplay on
   // load, so a deep link can only ready the deck on that song, not start it.
   const cue = useCallback(
     (id: string) => {
-      const el = audioRef.current;
-      const t = tracks.find((x) => x.id === id);
-      if (!el || !t?.audioUrl || currentId === id) return;
-      el.src = t.audioUrl;
-      setCurrentId(id);
-      setTime(0);
-      driveScene(t);
+      const t = tracks.find((track) => track.id === id);
+      if (!t?.audioUrl || currentIdRef.current === id) return;
+      selectTrack(t, "cue", false);
     },
-    [tracks, currentId, driveScene],
+    [tracks, selectTrack],
   );
 
   const playTrack = useCallback(
     (id: string) => {
-      const el = audioRef.current;
-      const t = tracks.find((x) => x.id === id);
-      if (!el || !t?.audioUrl) return;
+      const t = tracks.find((track) => track.id === id);
+      if (!t?.audioUrl) return;
       ensureGraph();
-      void ctxRef.current?.resume();
-      if (currentId !== id) {
-        el.src = t.audioUrl;
-        setCurrentId(id);
-        setTime(0);
+      if (currentIdRef.current !== id) {
+        selectTrack(t, "play", false);
+        return;
       }
+      intentRef.current = "play";
+      setPlaybackError(null);
+      setPlaybackStatus("loading");
       driveScene(t);
-      void el.play();
+      attemptPlay();
     },
-    [tracks, currentId, ensureGraph, driveScene],
+    [attemptPlay, driveScene, ensureGraph, selectTrack, setPlaybackStatus, tracks],
   );
 
   const toggle = useCallback(() => {
@@ -271,12 +338,21 @@ export function PlayerProvider({
       return;
     }
     if (el.paused) {
-      void ctxRef.current?.resume();
-      void el.play();
+      intentRef.current = "play";
+      setPlaybackError(null);
+      setPlaybackStatus("loading");
+      attemptPlay();
     } else {
       el.pause();
     }
-  }, [currentId, playable, playTrack]);
+  }, [attemptPlay, currentId, playable, playTrack, setPlaybackStatus]);
+
+  const retry = useCallback(() => {
+    const id = currentIdRef.current;
+    const t = id ? tracks.find((track) => track.id === id) : null;
+    if (!t?.audioUrl) return;
+    selectTrack(t, intentRef.current, true);
+  }, [selectTrack, tracks]);
 
   const step = useCallback(
     (dir: 1 | -1) => {
@@ -352,38 +428,99 @@ export function PlayerProvider({
     const el = audioRef.current;
     if (!el) return;
     el.volume = volume;
-    const onTime = () => setTime(el.currentTime);
-    const onDur = () => setDuration(Number.isFinite(el.duration) ? el.duration : 0);
-    const onPlay = () => setPlaying(true);
-    const onPause = () => setPlaying(false);
-    const onEnded = () => {
+    const isCurrentMediaEvent = (event: Event) => {
+      const currentSource = sourceRef.current;
+      if (!currentSource || !currentIdRef.current) return false;
+      const detail = (event as CustomEvent<{ src?: string }>).detail;
+      const activeSource = el.currentSrc || el.src;
+      if (detail?.src && detail.src !== currentSource && !currentSource.endsWith(detail.src)) return false;
+      return Boolean(activeSource) && (activeSource === currentSource || currentSource.endsWith(activeSource));
+    };
+    const onTime = () => {
+      if (currentIdRef.current) setTime(el.currentTime);
+    };
+    const onDur = () => {
+      if (currentIdRef.current) setDuration(Number.isFinite(el.duration) ? el.duration : 0);
+    };
+    const onLoadStart = (event: Event) => {
+      if (!isCurrentMediaEvent(event)) return;
+      setPlaybackError(null);
+      setPlaybackStatus("loading");
+    };
+    const onCanPlay = (event: Event) => {
+      if (!isCurrentMediaEvent(event)) return;
+      suppressPauseRef.current = false;
+      if (playbackStatusRef.current === "error") return;
+      if (playbackStatusRef.current !== "playing") setPlaybackStatus("ready");
+    };
+    const onPlay = (event: Event) => {
+      if (!isCurrentMediaEvent(event)) return;
+      suppressPauseRef.current = false;
+      setPlaying(true);
+      setPlaybackError(null);
+      setPlaybackStatus("playing");
+    };
+    const onPause = (event: Event) => {
+      if (!isCurrentMediaEvent(event)) return;
+      setPlaying(false);
+      if (suppressPauseRef.current) return;
+      if (playbackStatusRef.current !== "error") {
+        setPlaybackStatus(currentIdRef.current ? "paused" : "idle");
+      }
+    };
+    const onBuffering = (event: Event) => {
+      if (!isCurrentMediaEvent(event)) return;
+      setPlaybackStatus("loading");
+    };
+    const onError = (event: Event) => {
+      if (!isCurrentMediaEvent(event)) return;
+      const trackId = currentIdRef.current;
+      if (!trackId) return;
+      setPlaying(false);
+      setPlaybackStatus("error");
+      setPlaybackError({ trackId, code: "load" });
+    };
+    const onEnded = (event: Event) => {
+      if (!isCurrentMediaEvent(event)) return;
       if (repeatRef.current) {
         el.currentTime = 0;
-        void el.play();
+        intentRef.current = "play";
+        attemptPlay();
       } else {
         step(1);
       }
     };
     el.addEventListener("timeupdate", onTime);
     el.addEventListener("durationchange", onDur);
+    el.addEventListener("loadstart", onLoadStart);
+    el.addEventListener("canplay", onCanPlay);
     el.addEventListener("play", onPlay);
     el.addEventListener("pause", onPause);
+    el.addEventListener("waiting", onBuffering);
+    el.addEventListener("stalled", onBuffering);
+    el.addEventListener("error", onError);
     el.addEventListener("ended", onEnded);
     return () => {
       el.removeEventListener("timeupdate", onTime);
       el.removeEventListener("durationchange", onDur);
+      el.removeEventListener("loadstart", onLoadStart);
+      el.removeEventListener("canplay", onCanPlay);
       el.removeEventListener("play", onPlay);
       el.removeEventListener("pause", onPause);
+      el.removeEventListener("waiting", onBuffering);
+      el.removeEventListener("stalled", onBuffering);
+      el.removeEventListener("error", onError);
       el.removeEventListener("ended", onEnded);
     };
-    // `step` is stable enough; re-running on its identity is fine and cheap.
-  }, [step, volume]);
+  }, [attemptPlay, setPlaybackStatus, step, volume]);
 
   const value = useMemo<PlayerValue>(
     () => ({
       allTracks: tracks,
       currentId,
       playing,
+      playbackStatus,
+      playbackError,
       time,
       duration,
       volume,
@@ -404,6 +541,7 @@ export function PlayerProvider({
       setRepeat,
       cue,
       playTrack,
+      retry,
       toggle,
       next,
       prev,
@@ -414,6 +552,8 @@ export function PlayerProvider({
       tracks,
       currentId,
       playing,
+      playbackStatus,
+      playbackError,
       time,
       duration,
       volume,
@@ -434,6 +574,7 @@ export function PlayerProvider({
       setRepeat,
       cue,
       playTrack,
+      retry,
       toggle,
       next,
       prev,
