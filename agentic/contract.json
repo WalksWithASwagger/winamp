@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "repository": {
+    "base": "origin/main",
+    "default_branch": "main",
+    "branch_pattern": "codex/issue-<number>-<slug>",
+    "branch_regex": "^codex/issue-[0-9]+-[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "worktree_root": ".worktrees",
+    "one_issue_per_worktree": true
+  },
+  "issue": {
+    "required_sections": [
+      "Context",
+      "Acceptance Criteria",
+      "Tests/Evals",
+      "Verification",
+      "Agent Instructions",
+      "Out of Scope"
+    ],
+    "acceptance_criteria": {
+      "require_checkboxes": true
+    }
+  },
+  "labels": {
+    "ready": "agent:ready",
+    "stop": [
+      "blocked",
+      "needs-human",
+      "needs-decision"
+    ],
+    "review_ready": "review-ready"
+  },
+  "verification": {
+    "commands": [
+      "pnpm typecheck",
+      "pnpm test:run",
+      "pnpm build",
+      "pnpm check:dist",
+      "pnpm check:package",
+      "pnpm check:seo",
+      "pnpm --filter playground build"
+    ],
+    "playground_applicability": "Run pnpm --filter playground build when the playground is affected; pnpm check:seo also builds the playground."
+  },
+  "boundaries": {
+    "github_mutations": false,
+    "linear_writes": false,
+    "release_changes": false,
+    "player_changes": false
+  }
+}

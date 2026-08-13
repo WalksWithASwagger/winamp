@@ -1,0 +1,10 @@
+[
+  {
+    "number": 201,
+    "title": "Review-ready change",
+    "labels": [{"name": "review-ready"}],
+    "isDraft": false,
+    "headRefName": "codex/issue-101-ready-issue",
+    "baseRefName": "main"
+  }
+]
