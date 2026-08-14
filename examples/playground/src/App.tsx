@@ -166,6 +166,7 @@ export function App() {
         <nav className="bb-network" aria-label="Creative AI Human Lab">
           <span>Creative AI Human Lab:</span>
           <a href="https://kriskrug.co/work/">KrisKrug.co Work</a>
+          <a href="https://kriskrug.ai/">AI Garden</a>
           <a href="https://skywhaleairways.com/">Skywhale Airways</a>
           <a href="https://www.punkrockai.com/">Punk Rock AI</a>
           <a href="https://gorgeousghost.com/">Gorgeous Ghost</a>
