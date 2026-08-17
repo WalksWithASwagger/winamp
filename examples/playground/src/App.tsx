@@ -173,6 +173,8 @@ export function App() {
           <a href="https://wedges.dev/">Wedges</a>
           <a href="https://www.bothhandsfull.com/album/too-weird-to-die">Too Weird to Die</a>
           <a href="https://ethosblockparty.com/the-day">Ethos Lab Block Party</a>
+          <a href="https://darkcrystal.app/">Dark Crystal</a>
+          <a href="https://unofficial.city/">unofficial.city</a>
         </nav>
         <span className="bb-copy">© 2026 Kris Krüg · ghost.radio.fm</span>
       </footer>
