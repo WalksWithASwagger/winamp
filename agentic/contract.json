@@ -33,15 +33,18 @@
   "verification": {
     "commands": [
       "pnpm typecheck",
+      "pnpm exec tsc --noEmit -p examples/playground/tsconfig.json",
       "pnpm test:run",
       "pnpm build",
       "pnpm check:dist",
       "pnpm check:package",
       "pnpm check:seo",
+      "pnpm test:e2e",
       "pnpm --filter playground build"
     ],
     "playground_applicability": "Run pnpm --filter playground build when the playground is affected; pnpm check:seo also builds the playground."
   },
+  "boundary_scope": "Defaults unless the user explicitly authorizes a bounded action; record that scope in the issue. Never infer merge or release authorization.",
   "boundaries": {
     "github_mutations": false,
     "linear_writes": false,

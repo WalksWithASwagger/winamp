@@ -62,11 +62,13 @@ type PlayerValue = {
     setVolume: (v: number) => void;
 };
 declare function usePlayer(): PlayerValue;
-declare function PlayerProvider({ tracks, onNowPlaying, children, }: {
+declare function PlayerProvider({ tracks, onNowPlaying, transportMode, onTrackEnded, children, }: {
     tracks: PlayerTrack[];
     /** Optional hook so a host app can react to the playing track (e.g. drive an
      *  ambient scene) without the player depending on anything app-specific. */
     onNowPlaying?: (info: NowPlaying) => void;
+    transportMode?: "playlist" | "single";
+    onTrackEnded?: (trackId: string) => void;
     children: ReactNode;
 }): react.JSX.Element;
 

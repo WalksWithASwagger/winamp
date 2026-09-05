@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const SITE_URL = "https://ghost.radio.fm/";
 const CLASSIC_URL = `${SITE_URL}classic`;
+const TRANSMISSION_URL = `${SITE_URL}transmission-001`;
 const SOCIAL_IMAGE = `${SITE_URL}art/gorgeous-ghost-now.jpg`;
 const SOCIAL_IMAGE_ALT =
   "A luminous silver figure floats inside a gold ring above iridescent purple and green spheres.";
@@ -27,6 +28,14 @@ const pages = [
     socialTitle: "GHOST RADIO — Classic Booth",
     socialDescription:
       "Real Winamp 2 .wsz skins, live-switchable, on the open-source ghost radio engine.",
+    requireJsonLd: false,
+  },
+  {
+    file: "transmission-001.html",
+    canonical: TRANSMISSION_URL,
+    socialTitle: "GHOST RADIO — Transmission 001",
+    socialDescription:
+      "An on-demand Ghost Radio transmission, with three visual chapters and an artist’s note.",
     requireJsonLd: false,
   },
 ];
@@ -120,7 +129,7 @@ export function assertPageMetadata(html, expected) {
 
 function assertSitemap(xml) {
   const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(([, url]) => url);
-  const expected = [SITE_URL, CLASSIC_URL];
+  const expected = [SITE_URL, CLASSIC_URL, TRANSMISSION_URL];
   if (JSON.stringify(urls) !== JSON.stringify(expected)) {
     throw new Error(`sitemap URLs: expected ${expected.join(", ")}, received ${urls.join(", ")}`);
   }
@@ -139,6 +148,7 @@ function assertLlms(content) {
     "open-source React package",
     SITE_URL,
     CLASSIC_URL,
+    TRANSMISSION_URL,
     GITHUB_URL,
     NPM_URL,
   ]) {
@@ -166,8 +176,11 @@ async function main() {
   if (!/^\/classic\s+\/classic\.html\s+200$/m.test(redirects)) {
     throw new Error("classic redirect rule is missing");
   }
+  if (!/^\/transmission-001\s+\/transmission-001\.html\s+200$/m.test(redirects)) {
+    throw new Error("transmission redirect rule is missing");
+  }
 
-  console.log("SEO baseline verified for 2 entrypoints and 3 discovery files.");
+  console.log("SEO baseline verified for 3 entrypoints and 3 discovery files.");
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

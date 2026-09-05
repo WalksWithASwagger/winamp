@@ -247,6 +247,18 @@ classic windows, and a live `.wsz` skin picker:
 pnpm --filter playground dev   # http://localhost:5173
 ```
 
+### Transmission 001
+
+The playground also includes `/transmission-001`, a finite listening edition
+with authored visual chapters, an artist-note detour, and shareable moments.
+Its release media are not yet supplied; the route shows a preparation state
+until the approved manifest is populated. See [the transmission contract](docs/TRANSMISSION-001.md).
+
+Custom hosts can use `<PlayerProvider transportMode="single" onTrackEnded={...}>`
+to stop at each track’s end and disable playlist/OS track navigation. The
+default remains `playlist`. `seek()` queues positions until metadata is ready;
+`retry()` preserves position and play/pause intent.
+
 ## License
 
 MIT © Kris Krüg · classic sprite data ported from Webamp (MIT, see `NOTICE`).

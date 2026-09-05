@@ -22,6 +22,8 @@ jobs:
 
       - run: pnpm typecheck
 
+      - run: pnpm exec tsc --noEmit -p examples/playground/tsconfig.json
+
       - run: pnpm test:run
 
       # Rebuilds dist/ and fails if it drifts from what's committed,
@@ -30,6 +32,8 @@ jobs:
 
       - run: pnpm check:package
 
-      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm check:seo
+
+      - run: pnpm exec playwright install --with-deps chromium webkit
 
       - run: pnpm test:e2e

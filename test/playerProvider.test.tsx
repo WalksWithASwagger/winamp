@@ -150,11 +150,17 @@ describe("playback status", () => {
     expect(h.api.playbackStatus).toBe("loading");
     act(() => fireEvent(audio, new Event("canplay")));
     expect(h.api.playbackStatus).toBe("ready");
-    act(() => fireEvent.play(audio));
+    act(() => {
+      Object.defineProperty(audio, "paused", { value: false, configurable: true });
+      fireEvent.play(audio);
+    });
     expect(h.api.playbackStatus).toBe("playing");
     act(() => fireEvent.waiting(audio));
     expect(h.api.playbackStatus).toBe("loading");
-    act(() => fireEvent.pause(audio));
+    act(() => {
+      Object.defineProperty(audio, "paused", { value: true, configurable: true });
+      fireEvent.pause(audio);
+    });
     expect(h.api.playbackStatus).toBe("paused");
   });
 

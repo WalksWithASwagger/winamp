@@ -30,7 +30,7 @@ checkout may contain active or dirty work:
 ```bash
 git status --short --branch
 git worktree list
-git worktree add .worktrees/<lane> -b codex/<lane> origin/main
+git worktree add .worktrees/<lane> -b codex/issue-<number>-<slug> origin/main
 cd .worktrees/<lane>
 git status --short --branch
 ```

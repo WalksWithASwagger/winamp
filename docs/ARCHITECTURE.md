@@ -55,7 +55,9 @@ The package public surface is the root export in
 
 - `tracks: PlayerTrack[]`, the deliberately small host-owned track model;
 - `onNowPlaying?: (info: NowPlaying) => void`, the host callback for reacting
-  to a selected track; and
+  to a selected track;
+- `transportMode?: "playlist" | "single"` (default `playlist`); single mode stops at the end, ignores repeat, and disables next/previous actions and OS track navigation;
+- `onTrackEnded?: (trackId: string) => void`, called for the selected source’s native end event; and
 - `children`, which must contain every view or custom control that calls
   `usePlayer()`.
 
@@ -64,7 +66,11 @@ contains current track and transport state, the `AnalyserNode`, EQ state and
 setters, balance/shuffle/repeat state and setters, and the `cue`,
 `playTrack`, `toggle`, `next`, `prev`, `seek`, and `setVolume` actions. It throws when
 used outside a provider, so a custom view must stay inside the provider
-boundary.
+boundary. It also exposes `playbackStatus`, `playbackError`, and `retry()`.
+Seeking before metadata queues a nonnegative position and clamps it once the
+current source’s duration is known. Retry retains the requested/observed
+position and the current play/pause intent. OS play and pause are idempotent;
+all start paths initialize the graph, and `playing` events recover buffering.
 
 The provider owns browser integration and audio graph construction. A host
 does not replace the `<audio>` element or inject an audio engine. A host can
@@ -214,3 +220,11 @@ the committed files.
 Run dist-producing commands in an isolated worktree and inspect any generated
 diff before handing work off. Do not overwrite or clean unrelated `dist/`
 changes in another checkout.
+
+## Transmission 001
+
+The separate `/transmission-001` entrypoint reads a static first-party release
+manifest and uses a continuously mounted provider in single mode. The app owns
+chapter selection, the artist-note bookmark, transcript, and timestamp URLs.
+No programme data or second audio engine is added to the library. See
+[Transmission 001](TRANSMISSION-001.md) for the manifest and release gate.

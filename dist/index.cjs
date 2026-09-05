@@ -17,6 +17,8 @@ function usePlayer() {
 function PlayerProvider({
   tracks,
   onNowPlaying,
+  transportMode = "playlist",
+  onTrackEnded,
   children
 }) {
   const audioRef = react.useRef(null);
@@ -52,6 +54,9 @@ function PlayerProvider({
   const playbackStatusRef = react.useRef("idle");
   const intentRef = react.useRef("cue");
   const suppressPauseRef = react.useRef(false);
+  const metadataReadyRef = react.useRef(false);
+  const pendingSeekRef = react.useRef(null);
+  const positionRef = react.useRef(0);
   const setPlaybackStatus = react.useCallback((status) => {
     playbackStatusRef.current = status;
     setPlaybackStatusState(status);
@@ -168,24 +173,33 @@ function PlayerProvider({
     const trackId = currentIdRef.current;
     const token = sourceTokenRef.current;
     if (!el || !trackId) return;
-    void ctxRef.current?.resume();
-    try {
-      const result = el.play();
-      void result?.catch(() => {
-        if (token !== sourceTokenRef.current || trackId !== currentIdRef.current) return;
-        setPlaybackStatus("error");
-        setPlaybackError({ trackId, code: "play" });
-        setPlaying(false);
-      });
-    } catch {
-      if (token !== sourceTokenRef.current || trackId !== currentIdRef.current) return;
+    const fail = () => {
+      if (token !== sourceTokenRef.current || trackId !== currentIdRef.current || intentRef.current !== "play") return;
       setPlaybackStatus("error");
       setPlaybackError({ trackId, code: "play" });
       setPlaying(false);
+    };
+    try {
+      ensureGraph();
+      void ctxRef.current?.resume().catch(fail);
+      const result = el.play();
+      void result?.catch(fail);
+    } catch {
+      fail();
     }
-  }, [setPlaybackStatus]);
+  }, [ensureGraph, setPlaybackStatus]);
+  const applyPendingSeek = react.useCallback(() => {
+    const el = audioRef.current;
+    const requested = pendingSeekRef.current;
+    if (!el || !metadataReadyRef.current || requested === null) return;
+    const target = Number.isFinite(el.duration) ? Math.min(requested, el.duration) : requested;
+    el.currentTime = target;
+    pendingSeekRef.current = null;
+    positionRef.current = target;
+    setTime(target);
+  }, []);
   const selectTrack = react.useCallback(
-    (t, intent, reload) => {
+    (t, intent, reload, position = 0) => {
       const el = audioRef.current;
       if (!el || !t.audioUrl) return;
       sourceTokenRef.current += 1;
@@ -193,14 +207,17 @@ function PlayerProvider({
       intentRef.current = intent;
       sourceRef.current = t.audioUrl;
       setCurrentId(t.id);
-      setTime(0);
+      metadataReadyRef.current = false;
+      pendingSeekRef.current = position;
+      positionRef.current = position;
+      setTime(position);
       setDuration(0);
       setPlaying(false);
       setPlaybackError(null);
       setPlaybackStatus("loading");
       suppressPauseRef.current = true;
       if (reload || el.src !== t.audioUrl) el.src = t.audioUrl;
-      sourceRef.current = el.currentSrc || el.src || t.audioUrl;
+      sourceRef.current = el.src;
       try {
         el.load();
       } catch {
@@ -222,7 +239,6 @@ function PlayerProvider({
     (id) => {
       const t = tracks.find((track) => track.id === id);
       if (!t?.audioUrl) return;
-      ensureGraph();
       if (currentIdRef.current !== id) {
         selectTrack(t, "play", false);
         return;
@@ -233,12 +249,12 @@ function PlayerProvider({
       driveScene(t);
       attemptPlay();
     },
-    [attemptPlay, driveScene, ensureGraph, selectTrack, setPlaybackStatus, tracks]
+    [attemptPlay, driveScene, selectTrack, setPlaybackStatus, tracks]
   );
-  const toggle = react.useCallback(() => {
+  const play = react.useCallback(() => {
     const el = audioRef.current;
     if (!el) return;
-    if (!currentId) {
+    if (!currentIdRef.current) {
       if (playable[0]) playTrack(playable[0].id);
       return;
     }
@@ -247,19 +263,29 @@ function PlayerProvider({
       setPlaybackError(null);
       setPlaybackStatus("loading");
       attemptPlay();
-    } else {
-      el.pause();
     }
-  }, [attemptPlay, currentId, playable, playTrack, setPlaybackStatus]);
+  }, [attemptPlay, playable, playTrack, setPlaybackStatus]);
+  const pause = react.useCallback(() => {
+    intentRef.current = "cue";
+    const el = audioRef.current;
+    if (!el || el.paused) return;
+    const position = el.currentTime;
+    el.pause();
+    if (ctxRef.current && metadataReadyRef.current) el.currentTime = position;
+  }, []);
+  const toggle = react.useCallback(() => {
+    if (audioRef.current?.paused) play();
+    else pause();
+  }, [play, pause]);
   const retry = react.useCallback(() => {
     const id = currentIdRef.current;
     const t = id ? tracks.find((track) => track.id === id) : null;
     if (!t?.audioUrl) return;
-    selectTrack(t, intentRef.current, true);
+    selectTrack(t, intentRef.current, true, positionRef.current);
   }, [selectTrack, tracks]);
   const step = react.useCallback(
     (dir) => {
-      if (playable.length === 0) return;
+      if (transportMode === "single" || playable.length === 0) return;
       const i = playable.findIndex((t) => t.id === currentId);
       let nextIndex;
       if (shuffleRef.current && playable.length > 1) {
@@ -271,14 +297,17 @@ function PlayerProvider({
       }
       playTrack(playable[nextIndex].id);
     },
-    [playable, currentId, playTrack]
+    [playable, currentId, playTrack, transportMode]
   );
   const next = react.useCallback(() => step(1), [step]);
   const prev = react.useCallback(() => step(-1), [step]);
   const seek = react.useCallback((t) => {
-    const el = audioRef.current;
-    if (el && Number.isFinite(t)) el.currentTime = t;
-  }, []);
+    if (!currentIdRef.current || !Number.isFinite(t)) return;
+    pendingSeekRef.current = Math.max(0, t);
+    positionRef.current = pendingSeekRef.current;
+    setTime(positionRef.current);
+    applyPendingSeek();
+  }, [applyPendingSeek]);
   const setVolume = react.useCallback((v) => {
     const el = audioRef.current;
     const clamped = Math.min(1, Math.max(0, v));
@@ -294,10 +323,10 @@ function PlayerProvider({
       } catch {
       }
     };
-    set("play", () => toggle());
-    set("pause", () => toggle());
-    set("previoustrack", () => prev());
-    set("nexttrack", () => next());
+    set("play", play);
+    set("pause", pause);
+    set("previoustrack", transportMode === "single" ? null : prev);
+    set("nexttrack", transportMode === "single" ? null : next);
     set("seekto", (d) => {
       if (typeof d.seekTime === "number") seek(d.seekTime);
     });
@@ -305,7 +334,7 @@ function PlayerProvider({
       for (const a of ["play", "pause", "previoustrack", "nexttrack", "seekto"])
         set(a, null);
     };
-  }, [toggle, prev, next, seek]);
+  }, [play, pause, prev, next, seek, transportMode]);
   react.useEffect(() => {
     if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
       navigator.mediaSession.playbackState = playing ? "playing" : "paused";
@@ -323,11 +352,19 @@ function PlayerProvider({
       if (detail?.src && detail.src !== currentSource && !currentSource.endsWith(detail.src)) return false;
       return Boolean(activeSource) && (activeSource === currentSource || currentSource.endsWith(activeSource));
     };
-    const onTime = () => {
-      if (currentIdRef.current) setTime(el.currentTime);
+    const onTime = (event) => {
+      if (!isCurrentMediaEvent(event) || pendingSeekRef.current !== null) return;
+      positionRef.current = el.currentTime;
+      setTime(el.currentTime);
     };
-    const onDur = () => {
-      if (currentIdRef.current) setDuration(Number.isFinite(el.duration) ? el.duration : 0);
+    const onDur = (event) => {
+      if (isCurrentMediaEvent(event)) setDuration(Number.isFinite(el.duration) ? el.duration : 0);
+    };
+    const onMetadata = (event) => {
+      if (!isCurrentMediaEvent(event)) return;
+      metadataReadyRef.current = true;
+      onDur(event);
+      applyPendingSeek();
     };
     const onLoadStart = (event) => {
       if (!isCurrentMediaEvent(event)) return;
@@ -338,10 +375,11 @@ function PlayerProvider({
       if (!isCurrentMediaEvent(event)) return;
       suppressPauseRef.current = false;
       if (playbackStatusRef.current === "error") return;
-      if (playbackStatusRef.current !== "playing") setPlaybackStatus("ready");
+      if (!el.paused) setPlaybackStatus("playing");
+      else if (playbackStatusRef.current !== "paused") setPlaybackStatus("ready");
     };
     const onPlay = (event) => {
-      if (!isCurrentMediaEvent(event)) return;
+      if (!isCurrentMediaEvent(event) || el.paused) return;
       suppressPauseRef.current = false;
       setPlaying(true);
       setPlaybackError(null);
@@ -350,10 +388,9 @@ function PlayerProvider({
     const onPause = (event) => {
       if (!isCurrentMediaEvent(event)) return;
       setPlaying(false);
-      if (suppressPauseRef.current) return;
-      if (playbackStatusRef.current !== "error") {
-        setPlaybackStatus(currentIdRef.current ? "paused" : "idle");
-      }
+      if (suppressPauseRef.current || el.error || playbackStatusRef.current === "error") return;
+      intentRef.current = "cue";
+      setPlaybackStatus(currentIdRef.current ? "paused" : "idle");
     };
     const onBuffering = (event) => {
       if (!isCurrentMediaEvent(event)) return;
@@ -369,6 +406,15 @@ function PlayerProvider({
     };
     const onEnded = (event) => {
       if (!isCurrentMediaEvent(event)) return;
+      onTrackEnded?.(currentIdRef.current);
+      if (transportMode === "single") {
+        intentRef.current = "cue";
+        setPlaying(false);
+        setPlaybackStatus("paused");
+        positionRef.current = el.currentTime;
+        setTime(el.currentTime);
+        return;
+      }
       if (repeatRef.current) {
         el.currentTime = 0;
         intentRef.current = "play";
@@ -379,9 +425,11 @@ function PlayerProvider({
     };
     el.addEventListener("timeupdate", onTime);
     el.addEventListener("durationchange", onDur);
+    el.addEventListener("loadedmetadata", onMetadata);
     el.addEventListener("loadstart", onLoadStart);
     el.addEventListener("canplay", onCanPlay);
     el.addEventListener("play", onPlay);
+    el.addEventListener("playing", onPlay);
     el.addEventListener("pause", onPause);
     el.addEventListener("waiting", onBuffering);
     el.addEventListener("stalled", onBuffering);
@@ -390,16 +438,18 @@ function PlayerProvider({
     return () => {
       el.removeEventListener("timeupdate", onTime);
       el.removeEventListener("durationchange", onDur);
+      el.removeEventListener("loadedmetadata", onMetadata);
       el.removeEventListener("loadstart", onLoadStart);
       el.removeEventListener("canplay", onCanPlay);
       el.removeEventListener("play", onPlay);
+      el.removeEventListener("playing", onPlay);
       el.removeEventListener("pause", onPause);
       el.removeEventListener("waiting", onBuffering);
       el.removeEventListener("stalled", onBuffering);
       el.removeEventListener("error", onError);
       el.removeEventListener("ended", onEnded);
     };
-  }, [attemptPlay, setPlaybackStatus, step, volume]);
+  }, [attemptPlay, applyPendingSeek, onTrackEnded, setPlaybackStatus, step, transportMode, volume]);
   const value = react.useMemo(
     () => ({
       allTracks: tracks,
