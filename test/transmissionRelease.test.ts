@@ -56,7 +56,8 @@ describe("transmission media release gate", () => {
     await manifest();
     const report = await checkTransmission(root);
     expect(report.assets[0]).toMatchObject({ codec: "mp3", path: release.audioUrl });
-    expect(report.assets[0].duration).toBeCloseTo(70.6935, 3);
+    // FFmpeg 6 and 8 report encoder padding differently; both must meet the release tolerance.
+    expect(Math.abs(report.assets[0].duration - release.duration)).toBeLessThanOrEqual(0.05);
   });
   it("keeps pending content blocked even when media tools are unavailable", async () => {
     await writeFile(join(root, "transmission-001.json"), '{"release":null}');
@@ -81,11 +82,14 @@ describe("transmission media release gate", () => {
     await expect(checkTransmission(root)).rejects.toThrow("/audio/test-programme.wav: ffprobe failed");
   });
   it("rejects damaged audio that ffprobe can inspect but ffmpeg cannot fully decode", async () => {
-    const damaged = Buffer.concat([tone(30, 220), Buffer.from([0])]);
-    damaged.writeUInt32LE(damaged.length - 8, 4);
-    damaged.writeUInt32LE(damaged.length - 44, 40);
-    await writeFile(join(root, "audio/test-programme.wav"), damaged);
-    await expect(checkTransmission(root)).rejects.toThrow("/audio/test-programme.wav: ffmpeg failed");
+    release.audioUrl = "/audio/damaged.mp3";
+    release.duration = 70.69;
+    const damaged = await readFile("examples/playground/public/audio/gorgeous-ghost-now.mp3");
+    const middle = Math.floor(damaged.length / 2);
+    damaged.fill(0xff, middle, middle + 1024);
+    await writeFile(join(root, "audio/damaged.mp3"), damaged);
+    await manifest();
+    await expect(checkTransmission(root)).rejects.toThrow("/audio/damaged.mp3: ffmpeg failed");
   });
   it("rejects media whose actual format does not match its public extension", async () => {
     release.audioUrl = "/audio/programme.mp3";
