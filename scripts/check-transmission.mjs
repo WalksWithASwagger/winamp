@@ -11,7 +11,10 @@ const defaultPublicDir = resolve(dirname(fileURLToPath(import.meta.url)), "../ex
 
 async function tool(command, args) {
   try {
-    return (await run(command, args, { timeout: 60_000, maxBuffer: 1024 * 1024 })).stdout;
+    const { stdout, stderr } = await run(command, args, { timeout: 60_000, maxBuffer: 1024 * 1024 });
+    // At error log level, FFmpeg 6 can report a decoder failure yet exit zero despite -xerror.
+    if (stderr.trim()) throw new Error("Media tool reported an error.");
+    return stdout;
   } catch (error) {
     if (error.code === "ENOENT") throw new Error(`Media verification unavailable: ${command} is required on PATH.`);
     throw new Error(`${command} failed: ${error.killed ? "timed out" : "media could not be inspected or decoded"}.`);
