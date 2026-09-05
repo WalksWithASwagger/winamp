@@ -24,6 +24,9 @@ jobs:
 
       - run: pnpm exec tsc --noEmit -p examples/playground/tsconfig.json
 
+      - name: Install media verification tools
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - run: pnpm test:run
 
       # Rebuilds dist/ and fails if it drifts from what's committed,

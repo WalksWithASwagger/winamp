@@ -8,6 +8,7 @@ by the repository.
 
 - Node.js 24.x, recorded in [`.nvmrc`](../.nvmrc) and the CI workflows.
 - pnpm 10.28.2, recorded as `packageManager` in [`package.json`](../package.json).
+- `ffmpeg` and `ffprobe` on `PATH` for the transmission media-gate tests and release check (locally verified with 8.1.2). CI installs the Ubuntu FFmpeg package.
 - The workspace includes the root package and `examples/*`, including the
   `playground` package.
 

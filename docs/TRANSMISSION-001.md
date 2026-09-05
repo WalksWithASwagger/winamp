@@ -6,14 +6,18 @@ Issue [#73](https://github.com/WalksWithASwagger/winamp/issues/73) implements th
 
 `examples/playground/public/transmission-001.json` deliberately contains `{"release": null}`. The approved programme master, creator recording, transcript, final credits and chapter timings have not been supplied. The route shows a preparation state with no audio element or dead Play button. Do not mark the release complete or replace the missing creator recording with synthetic speech or another song.
 
-`pnpm check:transmission` exits nonzero until the release manifest and its local assets are supplied. This is a separate **content release gate**, not a substitute for CI, listening, or approval. Keep the PR in draft while it is unresolved. Automated interaction tests use clearly labelled synthetic fixtures outside the production manifest.
+`pnpm check:transmission` exits nonzero until the release manifest and its local assets are supplied and verified. This is a separate **content release gate**, not a substitute for CI, listening, or approval. Keep the PR in draft while it is unresolved. Automated interaction tests use clearly labelled synthetic fixtures outside the production manifest.
+
+For a populated manifest, the command requires `ffprobe` and `ffmpeg` on `PATH` (locally verified with 8.1.2). It checks nonempty local files, rejects asset symlinks escaping the public directory, verifies MP3/WAV format and a single audio stream, measures durations within 0.05 seconds of the declared values, and decodes both recordings completely without changing them. The measured programme must be at most 300 seconds and the note 15–30 seconds. Identical programme/note bytes are rejected; different bytes alone do not establish an actual creator recording. Artwork is checked for presence and hashed, not visually approved by the command.
+
+A successful check prints a JSON receipt containing the manifest hash, asset hashes and byte counts, measured audio durations, codecs and tool versions. Attach that receipt to the release review alongside listening/device results and approval of the exact content. Missing tools, decoding errors and missing content fail the check. No recording is normalized, trimmed, replaced or uploaded. Keep unapproved source material outside the public directory and public Git history; a draft PR is not private storage.
 
 To finish this same slice:
 
 1. Add the approved programme master (up to 300 seconds) and a distinct 15–30-second artist recording under `examples/playground/public/audio/`, with versioned filenames. Keep existing song files intact.
 2. Populate the manifest’s `release` using `TransmissionRelease` in `examples/playground/src/transmission/score.ts`: `audioUrl`, `duration`, `credits`, exactly three `chapters` (`at`, `title`, `image`, `alt`), and `note` (`audioUrl`, `duration`, `transcript`, `credits`). Times are seconds. The first chapter starts at zero; later chapters increase and stay below the programme duration. Use actual measured durations and approved credits.
 3. Use first-party `/audio/` media and `/art/` images. The existing three covers are available, but their mapping and chapter titles require review against the final edit. After public release, keep the Transmission 001 timeline immutable so existing moment links retain their meaning. Versioned audio filenames alone do not make a changed timeline compatible.
-4. Run `pnpm check:transmission`, verify actual decoded durations and seekability, listen through both assets, and update the preparation status in `public/llms.txt`.
+4. Run `pnpm check:transmission`, verify browser durations and seekability, listen through both assets, and update the preparation status in `public/llms.txt`. Once the manifest is populated, add `pnpm check:transmission` to CI; keep the current pending state explicit until then.
 5. Perform the device and listener checks below. Merge and deployment require their own authorization.
 
 ## Interaction contract
@@ -49,6 +53,8 @@ git diff --check
 Include generated library `dist/` in the patch; `pnpm check:dist` must pass once the intended generated changes are staged/committed. The playground consumes the package’s built output, so rebuild after provider edits before testing the application.
 
 CI verifies both TypeScript configurations, unit tests, generated output, packaging, three-page SEO, existing Chromium smoke tests, and transmission tests in Chromium and WebKit. Browser fixtures serve seekable byte ranges; they verify advancing media time, pause, seek, return intent, replay, failure/retry, one audio element, keyboard focus, 390px layout, 200% CSS zoom, and reduced motion. Synthetic fixture results do not establish listening quality or content approval.
+
+The media-gate regression tests run the real FFmpeg tools against temporary synthetic WAVs and an existing repository MP3. They cover duration mismatch, corrupt headers, incomplete decoding, wrong file formats, duplicate recordings, missing assets/tools, pending content and escaping symlinks. CI installs FFmpeg for these tests; missing tools are failures, not skipped checks. The production manifest remains separate from these fixtures.
 
 Before release, verify iOS Safari interruption/background/return behavior on a real device and make a full audible pass through the approved programme and note. Target four of five listeners starting within ten seconds and entering/leaving the note unaided. Record unavailable checks as unavailable, not passed.
 
