@@ -15,12 +15,22 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      name: "webkit",
+      testMatch: ["transmission.spec.ts", "proof.spec.ts"],
+      use: { ...devices["Desktop Safari"] },
+    },
   ],
-  webServer: {
+  webServer: [{
     command:
       "pnpm --filter playground build && pnpm --filter playground preview --host 127.0.0.1 --port 4173",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: false,
     timeout: 120_000,
-  },
+  }, {
+    command: "pnpm preview:transmission",
+    url: "http://127.0.0.1:4175/proof.html",
+    reuseExistingServer: false,
+    timeout: 120_000,
+  }],
 });

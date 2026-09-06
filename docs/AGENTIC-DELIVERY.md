@@ -17,14 +17,15 @@ Winamp agent work is issue-shaped, isolated, and reviewable. The source of truth
 
 5. Work only within the declared issue scope. Keep the diff reviewable and run the applicable verification commands.
 6. Stop and report when a stop label applies: `blocked`, `needs-human`, or `needs-decision`. These labels must never be combined with `agent:ready`.
-7. When the implementation and checks are complete, leave the branch and worktree for human review. A human owns GitHub comments, merges, releases, and any external side effect.
+7. When implementation and checks are complete, leave a reviewable branch and worktree. GitHub writes, merges, and releases require explicit user authorization; an approved issue/PR delivery request authorizes only its stated writes.
 
 ## Verification commands
 
-The repository commands are deliberately copied from `package.json`:
+Use the package scripts and the playground’s own TypeScript configuration:
 
 ```sh
 pnpm typecheck
+pnpm exec tsc --noEmit -p examples/playground/tsconfig.json
 pnpm test:run
 pnpm build
 pnpm check:dist
@@ -66,6 +67,6 @@ The report groups items as `ready`, `blocked`, `needs-human`, `review-ready`, or
 
 ## Human boundaries
 
-Agents may inspect saved issue data, edit code and docs in their issue worktree, run local checks, and produce a reviewable diff. They must stop for ambiguous product decisions, credentials, private data, external communication, GitHub mutations, merges, releases, branch-protection changes, player behavior changes, or work outside the issue contract.
+Agents may inspect saved issue data, edit within an approved issue worktree, run local checks, and produce a reviewable diff. The contract’s `boundaries` are default authorization boundaries, not permanent bans on product development. Explicit user approval takes precedence within its stated scope; record that scope in the issue. Stop when completion requires materially broader scope or permissions, credentials, private data, or an unauthorized external action.
 
-This bootstrap intentionally adds no GitHub Actions, auto-dispatch, auto-merge, branch protection, Linear writes, labels, player changes, or release changes.
+The original bootstrap added no dispatch, merge, or release automation. Do not infer authorization for those operations from the presence of delivery tooling. For the transmission surface, also follow [Transmission 001](TRANSMISSION-001.md), including its separate content release gate.

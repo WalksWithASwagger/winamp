@@ -1,8 +1,10 @@
 # v0.4 player API roadmap
 
-Status: proposal only. This document records the first bounded v0.4 feature
-contract from issue [#54](https://github.com/WalksWithASwagger/winamp/issues/54).
-It does not claim that the proposed API or behavior ships today.
+Status: historical proposal from issue [#54](https://github.com/WalksWithASwagger/winamp/issues/54).
+The playback-status API below was implemented in [#65](https://github.com/WalksWithASwagger/winamp/pull/65).
+The audit and proposed constraints below describe that earlier decision; see
+[Architecture](ARCHITECTURE.md) for the current provider contract and
+[Transmission 001](TRANSMISSION-001.md) for the separately approved next slice.
 
 ## Audit basis
 

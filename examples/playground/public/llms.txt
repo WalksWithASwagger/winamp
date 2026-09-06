@@ -6,6 +6,7 @@
 
 - [Ghost Radio](https://ghost.radio.fm/): The modern audio deck and station tuner
 - [Classic Booth](https://ghost.radio.fm/classic): The classic Winamp-style skin showcase
+- [Transmission 001](https://ghost.radio.fm/transmission-001): A Gorgeous Ghost listening edition, currently awaiting its approved release media.
 
 ## Open source package
 

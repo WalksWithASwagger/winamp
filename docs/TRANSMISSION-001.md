@@ -1,0 +1,88 @@
+# Transmission 001
+
+Issue [#73](https://github.com/WalksWithASwagger/winamp/issues/73) implements the approved finite listening edition. This is an on-demand programme, with three visual chapters and a short artist-note detour. It does not implement a broadcast schedule or simultaneous mixing.
+
+## Current release gate
+
+`examples/playground/public/transmission-001.json` deliberately contains `{"release": null}`. The approved programme master, creator recording, transcript, final credits and chapter timings have not been supplied. The route shows a preparation state with no audio element or dead Play button. Do not mark the release complete or replace the missing creator recording with synthetic speech or another song.
+
+`pnpm check:transmission` exits nonzero until the release manifest and its local assets are supplied and verified. This is a separate **content release gate**, not a substitute for CI, listening, or approval. The implementation and private-proof tooling may merge while this gate remains unresolved; merging them does not approve the public edition. Issue #73 tracks the remaining content and listening checks. Automated interaction tests use clearly labelled synthetic fixtures outside the production manifest.
+
+For a populated manifest, the command requires `ffprobe` and `ffmpeg` on `PATH` (locally verified with 6.1.1 and 8.1.2). It checks nonempty local files, rejects asset symlinks escaping the public directory, verifies MP3/WAV format and a single audio stream, measures durations within 0.05 seconds of the declared values, and decodes both recordings completely without changing them. Error-level diagnostics fail the check even if the tool exits zero, as FFmpeg 6 can do after a decoder error. The measured programme must be at most 300 seconds and the note 15–30 seconds. Identical programme/note bytes are rejected; different bytes alone do not establish an actual creator recording. Artwork is checked for presence and hashed, not visually approved by the command.
+
+A successful check prints a JSON receipt containing the manifest hash, asset hashes and byte counts, measured audio durations, codecs and tool versions. Attach that receipt to the release review alongside listening/device results and approval of the exact content. Missing tools, decoding errors and missing content fail the check. No recording is normalized, trimmed, replaced or uploaded. Keep unapproved source material outside the public directory and public Git history; a draft PR is not private storage.
+
+## Prepare a private listening proof
+
+The local proof prepares a candidate from the three existing Gorgeous Ghost recordings in catalogue order. It is review material, not an approved release. You do not need to assemble a master or write a manifest by hand before hearing the candidate.
+
+```sh
+pnpm prepare:transmission
+pnpm preview:transmission -- /absolute/path/printed/by/preparation
+```
+
+Alternatively, `pnpm preview:transmission` prepares a fresh candidate and opens a local server in one command. Visit `http://127.0.0.1:4175/proof.html`; Ctrl-C stops the server. The command does not open a browser or deploy anything.
+
+Preparation requires Node 24, installed workspace dependencies, FFmpeg and FFprobe. It decodes the three MP3s into stereo 48 kHz 16-bit PCM and concatenates them in their existing order, without trimming, crossfades or normalization. The review WAV is about 50 MB, not a delivery encoding. Chapter positions come from decoded sample counts; the final programme must contain exactly their sum and decode completely. The three existing artworks, titles and catalogue attribution are proposed for review.
+
+Every run creates a fresh private temporary directory outside Git, containing `audio/proof-programme.wav`, artwork, `transmission-proof.json` and `review.json`. The receipt records source and output hashes, byte counts, decoded durations, tool versions and remaining review requirements. Original recordings are unchanged. Failed preparation removes only its own incomplete output; intermediate PCM parts are removed after success. Temporary directories are not durable archival storage: retain an approved master separately when completing the release.
+
+Preview checks the manifest and asset hashes, builds a fresh site directory containing only the receipted assets and proof entrypoint, and binds to loopback. It does not serve the whole source directory. Normal builds exclude the proof entrypoint and private media; `noindex` is only a secondary hint, not the privacy boundary. Do not upload this directory, expose its server through a tunnel, or copy unapproved media into `public/` or a public PR.
+
+The proof supports playback, chapters, keyboard controls, static mode and an explicit ending using the same provider as the edition. It visibly identifies the missing authentic creator recording and transcript, omits the artist-note and public-sharing controls, and links to its local receipt. The production manifest remains `{"release": null}` and `pnpm check:transmission` must still fail. A proof receipt never authorizes publication or proves listening quality.
+
+Review the entire candidate for sequence, joins, level changes, chapter artwork, titles and credits. Keep any proposed edits explicit. The next content input is an authentic 15–30-second creator recording and its approved transcript; a phone recording is sufficient as source material. Do not synthesize a substitute.
+
+## Finish the release
+
+To finish this same slice after candidate review:
+
+1. Prepare the approved delivery encoding from the reviewed candidate (or an explicitly approved revised edit). Add that programme master (up to 300 seconds) and a distinct 15–30-second artist recording under `examples/playground/public/audio/`, with versioned filenames. Measure the delivery files again; do not assume the proof's timings survive re-encoding unchanged. Keep existing song files intact.
+2. Populate the manifest’s `release` using `TransmissionRelease` in `examples/playground/src/transmission/score.ts`: `audioUrl`, `duration`, `credits`, exactly three `chapters` (`at`, `title`, `image`, `alt`), and `note` (`audioUrl`, `duration`, `transcript`, `credits`). Times are seconds. The first chapter starts at zero; later chapters increase and stay below the programme duration. Use actual measured durations and approved credits.
+3. Use first-party `/audio/` media and `/art/` images. The existing three covers are available, but their mapping and chapter titles require review against the final edit. After public release, keep the Transmission 001 timeline immutable so existing moment links retain their meaning. Versioned audio filenames alone do not make a changed timeline compatible.
+4. Run `pnpm check:transmission`, verify browser durations and seekability, listen through both assets, and update the preparation status in `public/llms.txt`. Once the manifest is populated, add `pnpm check:transmission` to CI; keep the current pending state explicit until then.
+5. Perform the device and listener checks below. Obtain approval of the exact release content before publishing it; approval to merge the implementation does not approve missing or unreviewed media.
+
+## Interaction contract
+
+The manifest is loaded from `/transmission-001.json`; it is static data, not a CMS or API service. A malformed/unreachable manifest yields a visible reload/back message. An unapproved manifest yields the preparation state.
+
+A ready edition owns one mounted `PlayerProvider` with `transportMode="single"`. The library’s default playlist behavior is unchanged. Single mode stops on end, ignores repeat and makes next/previous actions inert, including OS track navigation. `onTrackEnded(trackId)` lets the app show its completion state.
+
+Opening `/transmission-001?t=12` cues at 12 seconds without autoplay. Finite timestamps clamp to the programme duration; malformed values become zero. Seek restoration waits for source metadata. Chapter imagery follows media time, not a wall-clock timer or `onNowPlaying`.
+
+Hear the artist saves the programme’s position and play/pause intent, then selects the note in the same audio element. Return restores both. Ending the note leaves it selected with Return available. Keyboard focus follows the detour and returns to its entry button. Copy this moment uses whole programme seconds even while the note is playing; denied clipboard access offers a selectable link.
+
+The artist note is always available as a transcript. Static mode and reduced-motion preference remove chapter animation. OS play/pause actions are idempotent. Pause pins the current media position because WebKit’s Web Audio media clock can otherwise revert to its last seek; this was reproduced with native elements outside React, with WAV and MP3, in both headed and headless WebKit. A media error keeps the selected source and its place; Retry repeats the prior intent without silently advancing.
+
+Playback events also check the element’s paused state: WebKit can deliver a queued `playing` event after a paused programme has been restored. This must not change the bookmark’s intent on the next detour.
+
+## Verification
+
+From the owned worktree:
+
+```sh
+pnpm typecheck
+pnpm exec tsc --noEmit -p examples/playground/tsconfig.json
+pnpm test:run
+pnpm build
+pnpm check:package
+pnpm check:seo
+pnpm test:e2e
+pnpm check:transmission
+git diff --check
+```
+
+Include generated library `dist/` in the patch; `pnpm check:dist` must pass once the intended generated changes are staged/committed. The playground consumes the package’s built output, so rebuild after provider edits before testing the application.
+
+CI verifies both TypeScript configurations, unit tests, generated output, packaging, three-page SEO, existing Chromium smoke tests, and transmission tests in Chromium and WebKit. Browser fixtures serve seekable byte ranges; they verify advancing media time, pause, seek, return intent, replay, failure/retry, one audio element, keyboard focus, 390px layout, 200% CSS zoom, and reduced motion. Synthetic fixture results do not establish listening quality or content approval.
+
+The media-gate regression tests run the real FFmpeg tools against temporary synthetic WAVs and an existing repository MP3. They cover duration mismatch, corrupt headers, incomplete decoding, wrong file formats, duplicate recordings, missing assets/tools, pending content and escaping symlinks. CI installs FFmpeg for these tests; missing tools are failures, not skipped checks. The production manifest remains separate from these fixtures.
+
+Proof regressions assemble the real local catalogue, verify sample boundaries, repeatable output and unchanged sources, reject unsafe output locations and modified/escaping assets, and build a private site without unrelated files. Browser checks run a separate loopback proof server in Chromium and WebKit, exercising real audio, chapters, keyboard playback, ending, reduced motion and narrow-screen zoom. Negative checks verify that normal production output and query parameters cannot expose the proof. Browser tests create temporary proof directories; these are local test artifacts, never public release content.
+
+Before release, verify iOS Safari interruption/background/return behavior on a real device and make a full audible pass through the approved programme and note. Target four of five listeners starting within ten seconds and entering/leaving the note unaided. Record unavailable checks as unavailable, not passed.
+
+## Exclusions
+
+No scheduling, cross-device synchronization, parallel audio mixing, generative media, accounts, telemetry, CMS/backend, persistent listening history, station/playlist redesign, existing skin/visualizer removal, dependency upgrades, or npm release work belongs to this slice.

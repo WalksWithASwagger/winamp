@@ -155,6 +155,7 @@ export function App() {
           skinnable deck.
         </span>
         <nav className="bb-links">
+          <a href="/transmission-001">Transmission 001 ↗</a>
           <a href="/classic">Classic ↗</a>
           <a href="https://gorgeousghost.com">Gorgeous Ghost ↗</a>
           <a href="https://www.bothhandsfull.com">Both Hands Full ↗</a>
