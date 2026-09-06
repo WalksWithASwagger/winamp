@@ -51,6 +51,8 @@
     "check:package": "node scripts/check-package.mjs",
     "check:seo": "pnpm --filter playground build && node scripts/check-seo.mjs",
     "check:transmission": "node scripts/check-transmission.mjs",
+    "prepare:transmission": "node scripts/prepare-transmission.mjs",
+    "preview:transmission": "node scripts/preview-transmission.mjs",
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {

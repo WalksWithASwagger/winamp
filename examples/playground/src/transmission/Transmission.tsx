@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PlayerProvider, usePlayer, usePrefersReducedMotion, type PlayerTrack } from "@walkswithaswagger/winamp";
-import { chapterAt, clock, momentFromSearch, type TransmissionRelease } from "./score";
+import { chapterAt, clock, momentFromSearch, type TransmissionProgramme, type TransmissionRelease } from "./score";
 import "./transmission.css";
 
 const poster = "/art/gorgeous-ghost-now.jpg";
@@ -8,11 +8,12 @@ const posterAlt = "A silver figure suspended inside a golden ring above iridesce
 const programmeId = "transmission-001";
 const noteId = "transmission-001-note";
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children, proof = false }: { children: React.ReactNode; proof?: boolean }) {
+  const home = proof ? "https://ghost.radio.fm/" : "/";
   return (
     <main className="transmission">
       <header className="tx-masthead">
-        <a href="/" aria-label="Ghost Radio home">GHOST<span>·</span>RADIO</a>
+        <a href={home} aria-label="Ghost Radio home">GHOST<span>·</span>RADIO</a>
         <span>100.7 / GORGEOUS GHOST</span>
       </header>
       <div className="tx-heading">
@@ -20,13 +21,12 @@ function Shell({ children }: { children: React.ReactNode }) {
         <p className="tx-tagline">Stay a while. <br />There’s someone behind the signal.</p>
       </div>
       {children}
-      <footer className="tx-footer"><a href="/">Back to the dial ↗</a><span>GHOST RADIO / KRIS KRÜG</span></footer>
+      <footer className="tx-footer"><a href={home}>Back to the dial ↗</a><span>GHOST RADIO / KRIS KRÜG</span></footer>
     </main>
   );
 }
 
 export function Transmission({ release }: { release: TransmissionRelease | null }) {
-  const [endedId, setEndedId] = useState<string | null>(null);
   if (!release) return (
     <Shell>
       <section className="tx-unavailable" aria-labelledby="tx-pending">
@@ -38,17 +38,36 @@ export function Transmission({ release }: { release: TransmissionRelease | null 
       </section>
     </Shell>
   );
-  const tracks: PlayerTrack[] = [
-    { id: programmeId, number: 1, title: "Transmission 001 — Gorgeous Ghost", person: release.credits, bpm: 0, audioUrl: release.audioUrl, coverImage: poster, art: { palette: ["#efb654"] } },
-    { id: noteId, number: 2, title: "Transmission 001 — Artist’s note", person: release.note.credits, bpm: 0, audioUrl: release.note.audioUrl, coverImage: poster, art: { palette: ["#efb654"] } },
-  ];
-  return <Shell><PlayerProvider tracks={tracks} transportMode="single" onTrackEnded={setEndedId}>
-    <ListeningRoom release={release} endedId={endedId} clearEnd={() => setEndedId(null)} />
-  </PlayerProvider></Shell>;
+  return <Shell><ReadyTransmission release={release} /></Shell>;
 }
 
-function ListeningRoom({ release, endedId, clearEnd }: {
-  release: TransmissionRelease; endedId: string | null; clearEnd: () => void;
+export function TransmissionProof({ programme }: { programme: TransmissionProgramme }) {
+  return <Shell proof>
+    <aside className="tx-note tx-proof" aria-label="Proof review">
+      <p className="tx-kicker">Private listening proof · not approved for release</p>
+      <p>Three existing recordings, in their current catalogue order. Review the joins, chapter artwork and proposed credits.</p>
+      <p>The creator recording and transcript are still needed. This proof contains no artist-note substitute.</p>
+      <a href="/review.json">Open the source and media receipt ↗</a>
+    </aside>
+    <ReadyTransmission release={programme} proof />
+  </Shell>;
+}
+
+type ListeningProgramme = TransmissionProgramme & { note?: TransmissionRelease["note"] };
+
+function ReadyTransmission({ release, proof = false }: { release: ListeningProgramme; proof?: boolean }) {
+  const [endedId, setEndedId] = useState<string | null>(null);
+  const tracks: PlayerTrack[] = [
+    { id: programmeId, number: 1, title: "Transmission 001 — Gorgeous Ghost", person: release.credits, bpm: 0, audioUrl: release.audioUrl, coverImage: poster, art: { palette: ["#efb654"] } },
+    ...(release.note ? [{ id: noteId, number: 2, title: "Transmission 001 — Artist’s note", person: release.note.credits, bpm: 0, audioUrl: release.note.audioUrl, coverImage: poster, art: { palette: ["#efb654"] } }] : []),
+  ];
+  return <PlayerProvider tracks={tracks} transportMode="single" onTrackEnded={setEndedId}>
+    <ListeningRoom release={release} endedId={endedId} clearEnd={() => setEndedId(null)} proof={proof} />
+  </PlayerProvider>;
+}
+
+function ListeningRoom({ release, endedId, clearEnd, proof }: {
+  release: ListeningProgramme; endedId: string | null; clearEnd: () => void; proof: boolean;
 }) {
   const player = usePlayer();
   const { cue, seek } = player;
@@ -66,7 +85,7 @@ function ListeningRoom({ release, endedId, clearEnd }: {
   const chapterIndex = chapterAt(release, time);
   const chapter = release.chapters[chapterIndex];
   const activeId = inNote ? noteId : programmeId;
-  const duration = inNote ? release.note.duration : release.duration;
+  const duration = inNote && release.note ? release.note.duration : release.duration;
   const ended = endedId === activeId && !player.playing && player.time >= duration - 0.1;
 
   useEffect(() => {
@@ -148,7 +167,7 @@ function ListeningRoom({ release, endedId, clearEnd }: {
           </button>
         </li>)}
       </ol>
-      <aside className="tx-note" aria-label="Artist’s note">
+      {release.note && <aside className="tx-note" aria-label="Artist’s note">
         <p className="tx-kicker">One short detour</p>
         {inNote ? <>
           <p>Your transmission is waiting at {clock(bookmark.current.time)}.</p>
@@ -157,16 +176,16 @@ function ListeningRoom({ release, endedId, clearEnd }: {
           <button type="button" ref={noteButton} onClick={enterNote}>Hear the artist ↗</button>
         </>}
         <details><summary>Read the transcript</summary><p className="tx-transcript">{release.note.transcript}</p><p>{release.note.credits}</p></details>
-      </aside>
+      </aside>}
       <div className="tx-utilities">
-        <button type="button" onClick={share}>Copy this moment</button>
+        {!proof && <button type="button" onClick={share}>Copy this moment</button>}
         <button type="button" aria-pressed={staticMode || reducedMotion} disabled={reducedMotion} onClick={() => setStaticMode(!staticMode)}>Static mode</button>
       </div>
       <div role="status" className="tx-share-status">{shareState === "copied" ? "Moment copied." : ""}</div>
       {shareState === "manual" && <label className="tx-copy">Copy this link
         <input readOnly value={shareUrl} onFocus={(e) => e.target.select()} />
       </label>}
-      <p className="tx-credits">{release.credits}</p>
+      <p className="tx-credits">{proof ? "Proposed credits: " : ""}{release.credits}</p>
     </div>
   </section>;
 }

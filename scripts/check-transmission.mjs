@@ -9,7 +9,7 @@ import { readRelease } from "../examples/playground/src/transmission/score.ts";
 const run = promisify(execFile);
 const defaultPublicDir = resolve(dirname(fileURLToPath(import.meta.url)), "../examples/playground/public");
 
-async function tool(command, args) {
+export async function runMediaTool(command, args) {
   try {
     const { stdout, stderr } = await run(command, args, { timeout: 60_000, maxBuffer: 1024 * 1024 });
     // At error log level, FFmpeg 6 can report a decoder failure yet exit zero despite -xerror.
@@ -22,7 +22,7 @@ async function tool(command, args) {
 }
 
 async function inspectAudio(file, assetPath, declaredDuration, minimum, maximum) {
-  const metadata = JSON.parse(await tool("ffprobe", [
+  const metadata = JSON.parse(await runMediaTool("ffprobe", [
     "-v", "error", "-protocol_whitelist", "file", "-format_whitelist", "mp3,wav", "-select_streams", "a", "-show_entries",
     "format=duration,format_name:stream=codec_name", "-of", "json", file,
   ]));
@@ -36,7 +36,7 @@ async function inspectAudio(file, assetPath, declaredDuration, minimum, maximum)
   if (Math.abs(duration - declaredDuration) > 0.05) {
     throw new Error(`Declared duration ${declaredDuration}s differs from measured duration ${duration}s by more than 0.05s.`);
   }
-  await tool("ffmpeg", [
+  await runMediaTool("ffmpeg", [
     "-nostdin", "-v", "error", "-xerror", "-protocol_whitelist", "file", "-format_whitelist", "mp3,wav",
     "-i", file, "-map", "0:a:0", "-f", "null", "-",
   ]);
@@ -69,8 +69,8 @@ export async function checkTransmission(publicDir = defaultPublicDir) {
   return {
     manifestSha256: createHash("sha256").update(manifestBytes).digest("hex"),
     tools: {
-      ffprobe: (await tool("ffprobe", ["-version"])).split("\n")[0],
-      ffmpeg: (await tool("ffmpeg", ["-version"])).split("\n")[0],
+      ffprobe: (await runMediaTool("ffprobe", ["-version"])).split("\n")[0],
+      ffmpeg: (await runMediaTool("ffmpeg", ["-version"])).split("\n")[0],
     },
     assets,
     reviewRequired: "Content approval, artwork review, audible listening, browser seekability, physical iOS and listener checks remain required.",

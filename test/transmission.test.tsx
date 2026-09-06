@@ -1,10 +1,11 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Transmission } from "../examples/playground/src/transmission/Transmission";
-import { chapterAt, momentFromSearch, readRelease } from "../examples/playground/src/transmission/score";
+import { Transmission, TransmissionProof } from "../examples/playground/src/transmission/Transmission";
+import { chapterAt, momentFromSearch, readProgramme, readRelease } from "../examples/playground/src/transmission/score";
 import { transmissionFixture as release } from "./fixtures/transmission";
 
 beforeEach(() => {
+  vi.clearAllMocks();
   window.history.replaceState({}, "", "/transmission-001");
   const paused = new WeakMap<HTMLMediaElement, boolean>();
   vi.spyOn(HTMLMediaElement.prototype, "paused", "get").mockImplementation(function(this: HTMLMediaElement) { return paused.get(this) ?? true; });
@@ -69,6 +70,22 @@ describe("transmission release and timestamps", () => {
 });
 
 describe("listening edition", () => {
+  it("plays an explicitly unapproved proof without exposing a note or public share", async () => {
+    const programme = readProgramme(release);
+    expect(programme).not.toHaveProperty("note");
+    expect(() => readRelease({ release: programme })).toThrow();
+    await act(async () => { render(<TransmissionProof programme={programme} />); });
+    expect(screen.getByText(/Private listening proof/)).toBeVisible();
+    expect(screen.queryByRole("button", { name: /Hear the artist/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Copy this moment" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Ghost Radio home" })).toHaveAttribute("href", "https://ghost.radio.fm/");
+    expect(screen.getByRole("link", { name: /source and media receipt/ })).toHaveAttribute("href", "/review.json");
+    await click("Play");
+    expect(document.querySelectorAll("audio")).toHaveLength(1);
+    expect(document.querySelector("audio")!.paused).toBe(false);
+    seekTo(22);
+    expect(screen.getByRole("heading", { name: "Gorgeous Ghost" })).toBeVisible();
+  });
   it("cues a deep link silently and updates the authored scene on seek", async () => {
     window.history.replaceState({}, "", "/transmission-001?t=12.5");
     const audio = await mount();

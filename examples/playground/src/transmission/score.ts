@@ -1,8 +1,10 @@
-export type TransmissionRelease = {
+export type TransmissionProgramme = {
   audioUrl: string;
   duration: number;
   credits: string;
   chapters: Array<{ at: number; title: string; image: string; alt: string }>;
+};
+export type TransmissionRelease = TransmissionProgramme & {
   note: { audioUrl: string; duration: number; transcript: string; credits: string };
 };
 
@@ -17,16 +19,11 @@ function asset(value: unknown, folder: "audio" | "art"): value is string {
   return text(value) && new RegExp(`^/${folder}/[a-zA-Z0-9_/-]+\\.(${extensions})$`).test(value);
 }
 
-export function readRelease(value: unknown): TransmissionRelease | null {
-  if (!record(value)) throw new Error("Invalid transmission manifest");
-  if (value.release === null) return null;
-  const r = value.release;
+export function readProgramme(r: unknown): TransmissionProgramme {
   if (!record(r) || !asset(r.audioUrl, "audio") || !text(r.credits) ||
       typeof r.duration !== "number" || !Number.isFinite(r.duration) || r.duration <= 0 || r.duration > 300 ||
-      !Array.isArray(r.chapters) || r.chapters.length !== 3 || !record(r.note) ||
-      !asset(r.note.audioUrl, "audio") || r.note.audioUrl === r.audioUrl || !text(r.note.transcript) || !text(r.note.credits) ||
-      typeof r.note.duration !== "number" || !Number.isFinite(r.note.duration) || r.note.duration < 15 || r.note.duration > 30) {
-    throw new Error("Incomplete transmission release");
+      !Array.isArray(r.chapters) || r.chapters.length !== 3) {
+    throw new Error("Incomplete transmission programme");
   }
   let previous = -1;
   for (const [index, chapter] of r.chapters.entries()) {
@@ -37,6 +34,19 @@ export function readRelease(value: unknown): TransmissionRelease | null {
     }
     previous = chapter.at;
   }
+  return { audioUrl: r.audioUrl, duration: r.duration, credits: r.credits, chapters: r.chapters as TransmissionProgramme["chapters"] };
+}
+
+export function readRelease(value: unknown): TransmissionRelease | null {
+  if (!record(value)) throw new Error("Invalid transmission manifest");
+  if (value.release === null) return null;
+  const r = value.release;
+  if (!record(r) || !record(r.note) || !asset(r.note.audioUrl, "audio") ||
+      r.note.audioUrl === r.audioUrl || !text(r.note.transcript) || !text(r.note.credits) ||
+      typeof r.note.duration !== "number" || !Number.isFinite(r.note.duration) || r.note.duration < 15 || r.note.duration > 30) {
+    throw new Error("Incomplete transmission release");
+  }
+  readProgramme(r);
   return r as TransmissionRelease;
 }
 
@@ -45,7 +55,7 @@ export function momentFromSearch(search: string, duration: number): number {
   return Number.isFinite(value) ? Math.max(0, Math.min(value, duration)) : 0;
 }
 
-export function chapterAt(release: TransmissionRelease, time: number): number {
+export function chapterAt(release: TransmissionProgramme, time: number): number {
   for (let i = release.chapters.length - 1; i > 0; i--) {
     if (time >= release.chapters[i].at) return i;
   }
