@@ -103,7 +103,7 @@ button:disabled { cursor: default; opacity: .55; }
   .tx-tagline br { display: none; }
   .tx-masthead { align-items: start; flex-wrap: wrap; }
   .tx-masthead > span { max-width: 112px; line-height: 1.5; }
-  .tx-heading h1 { font-size: clamp(28px, 7vw, 36px); }
+  .tx-heading h1 { font-size: clamp(28px, 7vw, 36px); overflow-wrap: anywhere; }
   .tx-heading h1 span { margin-left: 4px; }
   .tx-footer { align-items: start; flex-direction: column; gap: 4px; }
   .tx-unavailable { grid-template-columns: 1fr; gap: 12px; }

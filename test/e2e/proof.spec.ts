@@ -38,11 +38,14 @@ test("private proof stays usable on a narrow screen with reduced motion and zoom
   await page.goto(proofUrl);
   await expect(page.getByRole("region", { name: "Transmission player" })).toHaveAttribute("data-static", "true");
   await page.evaluate(() => { document.documentElement.style.zoom = "2"; });
-  const layout = await page.evaluate(() => ({
-    width: window.innerWidth, scroll: document.documentElement.scrollWidth,
-    overflow: [...document.querySelectorAll("main *")].filter((element) => element.getBoundingClientRect().right > window.innerWidth).map((element) => ({ tag: element.tagName, class: element.className, text: element.textContent?.slice(0, 60) })),
-  }));
-  expect(layout.scroll, JSON.stringify(layout)).toBeLessThanOrEqual(layout.width);
+  for (const widerFont of [false, true]) {
+    if (widerFont) await page.addStyleTag({ content: ".tx-heading h1 { font-family: monospace; }" });
+    const layout = await page.evaluate(() => ({
+      width: window.innerWidth, scroll: document.documentElement.scrollWidth,
+      overflow: [...document.querySelectorAll("main *")].filter((element) => element.getBoundingClientRect().right > window.innerWidth).map((element) => ({ tag: element.tagName, class: element.className, text: element.textContent?.slice(0, 60) })),
+    }));
+    expect(layout.scroll, JSON.stringify({ widerFont, ...layout })).toBeLessThanOrEqual(layout.width);
+  }
   await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   await page.getByRole("link", { name: /source and media receipt/ }).click();
   await expect(page).toHaveURL(/review\.json$/);
