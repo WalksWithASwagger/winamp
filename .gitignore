@@ -7,3 +7,6 @@ node_modules/
 examples/*/dist/
 .vercel
 .netlify
+
+# Linked worktrees (workspace layout policy)
+.worktrees/
