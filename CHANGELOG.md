@@ -10,21 +10,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   recommends observable remote playback loading/error state as the first slice;
   implementation is intentionally deferred.
 
-Merged work since 2026-08-29, from `git log` and merged PR titles (three PRs;
+Merged work since 2026-08-29, from `gh pr list` and `git log` (four PRs;
 nothing else merged in that window):
 
 ### Added
 
+- Root `AGENTS.md` for coding agents, plus a changelog catch-up of the three
+  earlier merges
+  ([#76](https://github.com/WalksWithASwagger/winamp/pull/76)).
 - Transmission 001 listening edition with a private listening proof
   ([#74](https://github.com/WalksWithASwagger/winamp/pull/74)).
 
 ### Changed
 
+- Ignore linked workspace worktrees
+  ([#75](https://github.com/WalksWithASwagger/winamp/pull/75)).
 - Lengthened ghost.radio.fm homepage and JSON-LD meta description into the
   120–160 character band
   ([#72](https://github.com/WalksWithASwagger/winamp/pull/72)).
-- Ignore linked workspace worktrees
-  ([#75](https://github.com/WalksWithASwagger/winamp/pull/75)).
 
 ## [0.3.0] - 2026-06-28
 
