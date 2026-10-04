@@ -1,3 +1,6 @@
+> **Archived 2026-10-04. The code now lives in [`WalksWithASwagger/kk-kb`](https://github.com/WalksWithASwagger/kk-kb) at `apps/winamp/` (private).**
+> This repo is read-only. [ghost.radio.fm](https://ghost.radio.fm) keeps serving from Netlify; [winamp-chi.vercel.app](https://winamp-chi.vercel.app) builds from kk-kb. npm publishing will run from kk-kb (`.github/workflows/winamp-publish.yml`) once trusted publishing is set up; `@walkswithaswagger/winamp` isn't on npm yet.
+
 # @walkswithaswagger/winamp
 
 [![npm](https://img.shields.io/npm/v/@walkswithaswagger/winamp.svg)](https://www.npmjs.com/package/@walkswithaswagger/winamp) &nbsp;**[▶ Live demo](https://winamp-chi.vercel.app)**
